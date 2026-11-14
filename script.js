@@ -712,6 +712,152 @@ function showToast(message, type = 'info') {
   }, 3200);
 }
 
+/* ============================================================================
+   5b. ADMIN AUTHENTICATION & ACCESS CONTROL (Credentials: admin / 123)
+   ============================================================================ */
+
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: '123'
+};
+
+let pendingAdminAction = null;
+
+/**
+ * Checks whether user currently possesses authenticated admin session
+ */
+function isAdmin() {
+  return sessionStorage.getItem('nexus_is_admin') === 'true';
+}
+
+/**
+ * Sets or clears admin authentication in session storage
+ */
+function setAdminAuth(status) {
+  if (status) {
+    sessionStorage.setItem('nexus_is_admin', 'true');
+  } else {
+    sessionStorage.removeItem('nexus_is_admin');
+  }
+  updateAuthUI();
+}
+
+/**
+ * Dynamically updates header badges, buttons, and form state according to auth level
+ */
+function updateAuthUI() {
+  const authed = isAdmin();
+  const authBtn = document.getElementById('authBtn');
+  const authBtnText = document.getElementById('authBtnText');
+  const authBtnIcon = document.getElementById('authBtnIcon');
+  const authStatusBadge = document.getElementById('authStatusBadge');
+  const formAuthPill = document.getElementById('formAuthPill');
+  const authPillDot = document.getElementById('authPillDot');
+  const formAuthPillText = document.getElementById('formAuthPillText');
+
+  if (authed) {
+    if (authBtn) {
+      authBtn.className = 'btn btn-secondary btn-sm';
+      authBtn.title = 'Click to Log Out (Admin Mode Active)';
+    }
+    if (authBtnText) authBtnText.textContent = 'Logout (Admin)';
+    if (authBtnIcon) {
+      authBtnIcon.innerHTML = `
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+      `;
+    }
+    if (authStatusBadge) {
+      authStatusBadge.className = 'badge badge-emerald';
+      authStatusBadge.textContent = '🔓 ADMIN MODE';
+    }
+    if (formAuthPill) {
+      formAuthPill.classList.add('is-admin');
+    }
+    if (authPillDot) {
+      authPillDot.className = 'auth-pill-dot dot-emerald';
+    }
+    if (formAuthPillText) {
+      formAuthPillText.textContent = 'Admin Mode • Full Access';
+    }
+  } else {
+    if (authBtn) {
+      authBtn.className = 'btn btn-primary btn-sm btn-glow';
+      authBtn.title = 'Click to Log In as Admin';
+    }
+    if (authBtnText) authBtnText.textContent = 'Admin Login';
+    if (authBtnIcon) {
+      authBtnIcon.innerHTML = `
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      `;
+    }
+    if (authStatusBadge) {
+      authStatusBadge.className = 'badge badge-rose';
+      authStatusBadge.textContent = '🔒 VIEW ONLY';
+    }
+    if (formAuthPill) {
+      formAuthPill.classList.remove('is-admin');
+    }
+    if (authPillDot) {
+      authPillDot.className = 'auth-pill-dot dot-rose';
+    }
+    if (formAuthPillText) {
+      formAuthPillText.textContent = 'View Only • Log In to Edit';
+    }
+  }
+}
+
+/**
+ * Opens the login modal popup rectangle
+ */
+function openLoginModal(message) {
+  const modal = document.getElementById('loginModal');
+  const subtitle = document.getElementById('loginModalSubtitle');
+  const errorAlert = document.getElementById('loginErrorAlert');
+  const userInp = document.getElementById('loginUsername');
+  const passInp = document.getElementById('loginPassword');
+
+  if (subtitle && message) subtitle.textContent = message;
+  if (errorAlert) errorAlert.style.display = 'none';
+  if (userInp) userInp.value = '';
+  if (passInp) passInp.value = '';
+
+  if (modal) {
+    modal.classList.add('open');
+    setTimeout(() => {
+      if (userInp) userInp.focus();
+    }, 150);
+  }
+}
+
+/**
+ * Closes the login modal popup
+ */
+function closeLoginModal() {
+  const modal = document.getElementById('loginModal');
+  if (modal) modal.classList.remove('open');
+  const errorAlert = document.getElementById('loginErrorAlert');
+  if (errorAlert) errorAlert.style.display = 'none';
+}
+
+/**
+ * Guards any action with Admin Authentication.
+ * If authenticated, executes callback immediately and returns true.
+ * If not authenticated, saves callback, opens the login popup rectangle, and returns false.
+ */
+function requireAdmin(actionCallback, contextMessage) {
+  if (isAdmin()) {
+    if (typeof actionCallback === 'function') actionCallback();
+    return true;
+  }
+
+  pendingAdminAction = actionCallback;
+  openLoginModal(contextMessage || 'Please authenticate as administrator to record payments, modify expenses, or change project settings.');
+  showToast('🔒 Admin Login Required: Please authenticate with admin / 123', 'info');
+  return false;
+}
+
 /**
  * Initializes all event listeners on page load
  */
@@ -747,10 +893,103 @@ function attachEventListeners() {
     modeTransferBtn.addEventListener('click', () => setActivityMode('transfer'));
   }
 
-  // 1. Submit New Project Hardware Expense
+  // 0b. Admin Authentication UI Listeners
+  const authBtn = document.getElementById('authBtn');
+  if (authBtn) {
+    authBtn.addEventListener('click', () => {
+      if (isAdmin()) {
+        if (confirm('Log out from Admin Mode? The app will return to view-only mode for safety.')) {
+          setAdminAuth(false);
+          showToast('Logged out. Switched to View-Only mode.', 'info');
+        }
+      } else {
+        openLoginModal('Enter admin credentials (admin / 123) to unlock full editing and payment access.');
+      }
+    });
+  }
+
+  const formAuthPill = document.getElementById('formAuthPill');
+  if (formAuthPill) {
+    formAuthPill.addEventListener('click', () => {
+      if (isAdmin()) {
+        showToast('✓ Admin Mode Active: You have full permissions.', 'success');
+      } else {
+        openLoginModal('Enter admin credentials to unlock full editing and payment access.');
+      }
+    });
+  }
+
+  // 0c. Password Visibility Toggle
+  const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+  const loginPassword = document.getElementById('loginPassword');
+  const pwdEyeIcon = document.getElementById('pwdEyeIcon');
+  if (togglePasswordBtn && loginPassword) {
+    togglePasswordBtn.addEventListener('click', () => {
+      const isPwd = loginPassword.type === 'password';
+      loginPassword.type = isPwd ? 'text' : 'password';
+      if (pwdEyeIcon) {
+        pwdEyeIcon.innerHTML = isPwd
+          ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`
+          : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+      }
+    });
+  }
+
+  // 0d. Login Form Submission Handler (Validates username: admin, password: 123)
+  const loginForm = document.getElementById('loginForm');
+  const loginErrorAlert = document.getElementById('loginErrorAlert');
+  const loginErrorMsg = document.getElementById('loginErrorMsg');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = (document.getElementById('loginUsername').value || '').trim();
+      const p = (document.getElementById('loginPassword').value || '').trim();
+
+      if (u === ADMIN_CREDENTIALS.username && p === ADMIN_CREDENTIALS.password) {
+        setAdminAuth(true);
+        closeLoginModal();
+        showToast('🔓 Welcome Admin! Editing and payment permissions unlocked.', 'success');
+
+        // Resume pending action if user clicked something while in view-only mode
+        if (typeof pendingAdminAction === 'function') {
+          const action = pendingAdminAction;
+          pendingAdminAction = null;
+          setTimeout(() => {
+            action();
+          }, 120);
+        }
+      } else {
+        if (loginErrorAlert) {
+          loginErrorAlert.style.display = 'flex';
+        }
+        if (loginErrorMsg) {
+          loginErrorMsg.textContent = 'Incorrect credentials. Username: admin | Password: 123';
+        }
+        const passInput = document.getElementById('loginPassword');
+        if (passInput) {
+          passInput.value = '';
+          passInput.focus();
+        }
+      }
+    });
+  }
+
+  // 1. Submit New Project Hardware Expense (Admin Guarded)
   if (expenseForm) {
     expenseForm.addEventListener('submit', (e) => {
       e.preventDefault();
+
+      if (!isAdmin()) {
+        requireAdmin(() => {
+          if (expenseForm.requestSubmit) {
+            expenseForm.requestSubmit();
+          } else {
+            expenseForm.dispatchEvent(new Event('submit'));
+          }
+        }, 'Admin login required to record project purchases.');
+        return;
+      }
 
       const payerId = document.getElementById('payerSelect').value;
       const amount = Math.round(parseFloat(document.getElementById('expenseAmount').value));
@@ -789,10 +1028,21 @@ function attachEventListeners() {
     });
   }
 
-  // 1b. Submit Direct Member Debt Reimbursement / Partial Payment
+  // 1b. Submit Direct Member Debt Reimbursement / Partial Payment (Admin Guarded)
   if (transferForm) {
     transferForm.addEventListener('submit', (e) => {
       e.preventDefault();
+
+      if (!isAdmin()) {
+        requireAdmin(() => {
+          if (transferForm.requestSubmit) {
+            transferForm.requestSubmit();
+          } else {
+            transferForm.dispatchEvent(new Event('submit'));
+          }
+        }, 'Admin login required to record direct peer payments.');
+        return;
+      }
 
       const fromId = document.getElementById('transferFromSelect').value;
       const toId = document.getElementById('transferToSelect').value;
@@ -852,7 +1102,7 @@ function attachEventListeners() {
     });
   });
 
-  // 2b. Direct Settlement Card "⚡ Pay" Button Delegation
+  // 2b. Direct Settlement Card "⚡ Pay" Button Delegation (Admin Guarded)
   const settlementsContainer = document.getElementById('settlementsContainer');
   if (settlementsContainer) {
     settlementsContainer.addEventListener('click', (e) => {
@@ -863,34 +1113,36 @@ function attachEventListeners() {
       const toId = payBtn.getAttribute('data-to');
       const amount = Math.round(parseFloat(payBtn.getAttribute('data-amount') || '0'));
 
-      // Switch to direct transfer mode
-      setActivityMode('transfer');
+      requireAdmin(() => {
+        // Switch to direct transfer mode
+        setActivityMode('transfer');
 
-      const transferFromSelect = document.getElementById('transferFromSelect');
-      const transferToSelect = document.getElementById('transferToSelect');
-      const transferAmount = document.getElementById('transferAmount');
-      const transferNote = document.getElementById('transferNote');
+        const transferFromSelect = document.getElementById('transferFromSelect');
+        const transferToSelect = document.getElementById('transferToSelect');
+        const transferAmount = document.getElementById('transferAmount');
+        const transferNote = document.getElementById('transferNote');
 
-      if (transferFromSelect) transferFromSelect.value = fromId;
-      if (transferToSelect) transferToSelect.value = toId;
-      if (transferAmount) {
-        transferAmount.value = amount > 0 ? amount : 50;
-        transferAmount.focus();
-        transferAmount.select();
-      }
-      if (transferNote) {
-        const toObj = appState.members.find(m => m.id === toId);
-        transferNote.value = `Payment to ${toObj ? toObj.name.split(' ')[0] : 'teammate'}`;
-      }
+        if (transferFromSelect) transferFromSelect.value = fromId;
+        if (transferToSelect) transferToSelect.value = toId;
+        if (transferAmount) {
+          transferAmount.value = amount > 0 ? amount : 50;
+          transferAmount.focus();
+          transferAmount.select();
+        }
+        if (transferNote) {
+          const toObj = appState.members.find(m => m.id === toId);
+          transferNote.value = `Payment to ${toObj ? toObj.name.split(' ')[0] : 'teammate'}`;
+        }
 
-      const formCard = document.getElementById('ledgerFormSection');
-      if (formCard) formCard.scrollIntoView({ behavior: 'smooth' });
+        const formCard = document.getElementById('ledgerFormSection');
+        if (formCard) formCard.scrollIntoView({ behavior: 'smooth' });
 
-      showToast('Payment form prefilled. You can edit the amount (e.g. pay 50 EGP now).', 'info');
+        showToast('Payment form prefilled. You can edit the amount (e.g. pay 50 EGP now).', 'info');
+      }, 'Admin login required to process direct peer settlements.');
     });
   }
 
-  // 3. Delete Expense Delegation
+  // 3. Delete Expense Delegation (Admin Guarded)
   const transactionsFeed = document.getElementById('transactionsFeed');
   if (transactionsFeed) {
     transactionsFeed.addEventListener('click', (e) => {
@@ -899,14 +1151,17 @@ function attachEventListeners() {
 
       const txId = deleteBtn.getAttribute('data-tx-id');
       const targetTx = appState.expenses.find(t => t.id === txId);
+      if (!targetTx) return;
 
-      const desc = targetTx.type === 'transfer' ? 'this payment transfer' : `"${targetTx.description}"`;
-      if (confirm(`Are you sure you want to delete ${desc}? All 6 rolling balances will recalculate.`)) {
-        appState.expenses = appState.expenses.filter(t => t.id !== txId);
-        appState.save();
-        renderAll();
-        showToast('Record removed & ledger balances recalculated.', 'info');
-      }
+      requireAdmin(() => {
+        const desc = targetTx.type === 'transfer' ? 'this payment transfer' : `"${targetTx.description}"`;
+        if (confirm(`Are you sure you want to delete ${desc}? All 6 rolling balances will recalculate.`)) {
+          appState.expenses = appState.expenses.filter(t => t.id !== txId);
+          appState.save();
+          renderAll();
+          showToast('Record removed & ledger balances recalculated.', 'info');
+        }
+      }, 'Admin login required to delete transactions.');
     });
   }
 
@@ -919,7 +1174,7 @@ function attachEventListeners() {
     });
   }
 
-  // 5. Budget Modal Setup
+  // 5. Budget Modal Setup (Admin Guarded)
   const openBudgetBtn = document.getElementById('openBudgetModalBtn');
   const budgetModal = document.getElementById('budgetModal');
   const editBudgetForm = document.getElementById('editBudgetForm');
@@ -927,8 +1182,10 @@ function attachEventListeners() {
 
   if (openBudgetBtn && budgetModal) {
     openBudgetBtn.addEventListener('click', () => {
-      if (budgetTargetInput) budgetTargetInput.value = appState.budgetTarget;
-      budgetModal.classList.add('open');
+      requireAdmin(() => {
+        if (budgetTargetInput) budgetTargetInput.value = appState.budgetTarget;
+        budgetModal.classList.add('open');
+      }, 'Admin login required to change project budget target.');
     });
   }
 
@@ -946,22 +1203,24 @@ function attachEventListeners() {
     });
   }
 
-  // 6. Edit Project Title Button
+  // 6. Edit Project Title Button (Admin Guarded)
   const editProjectNameBtn = document.getElementById('editProjectNameBtn');
   if (editProjectNameBtn) {
     editProjectNameBtn.addEventListener('click', () => {
-      const current = appState.projectName;
-      const updated = prompt('Enter your Graduation Project Title:', current);
-      if (updated && updated.trim() && updated.trim() !== current) {
-        appState.projectName = updated.trim();
-        appState.save();
-        renderAll();
-        showToast('Project title updated.', 'success');
-      }
+      requireAdmin(() => {
+        const current = appState.projectName;
+        const updated = prompt('Enter your Graduation Project Title:', current);
+        if (updated && updated.trim() && updated.trim() !== current) {
+          appState.projectName = updated.trim();
+          appState.save();
+          renderAll();
+          showToast('Project title updated.', 'success');
+        }
+      }, 'Admin login required to change project title.');
     });
   }
 
-  // 7. Customize Team Members Modal
+  // 7. Customize Team Members Modal (Admin Guarded)
   const manageTeamBtn = document.getElementById('manageTeamBtn');
   const teamModal = document.getElementById('teamModal');
   const editTeamForm = document.getElementById('editTeamForm');
@@ -969,15 +1228,17 @@ function attachEventListeners() {
 
   if (manageTeamBtn && teamModal) {
     manageTeamBtn.addEventListener('click', () => {
-      if (teamEditList) {
-        teamEditList.innerHTML = appState.members.map((m, idx) => `
-          <div class="team-edit-row">
-            <input type="text" id="member_name_${m.id}" value="${escapeHTML(m.name)}" placeholder="Member #${idx+1} Name" required>
-            <input type="text" id="member_role_${m.id}" value="${escapeHTML(m.role)}" placeholder="Role / Discipline">
-          </div>
-        `).join('');
-      }
-      teamModal.classList.add('open');
+      requireAdmin(() => {
+        if (teamEditList) {
+          teamEditList.innerHTML = appState.members.map((m, idx) => `
+            <div class="team-edit-row">
+              <input type="text" id="member_name_${m.id}" value="${escapeHTML(m.name)}" placeholder="Member #${idx+1} Name" required>
+              <input type="text" id="member_role_${m.id}" value="${escapeHTML(m.role)}" placeholder="Role / Discipline">
+            </div>
+          `).join('');
+        }
+        teamModal.classList.add('open');
+      }, 'Admin login required to edit team member names.');
     });
   }
 
@@ -1004,24 +1265,34 @@ function attachEventListeners() {
       const modalId = btn.getAttribute('data-close');
       const targetModal = document.getElementById(modalId);
       if (targetModal) targetModal.classList.remove('open');
+      if (modalId === 'loginModal') {
+        const loginErrorAlert = document.getElementById('loginErrorAlert');
+        if (loginErrorAlert) loginErrorAlert.style.display = 'none';
+      }
     });
   });
 
   document.querySelectorAll('.modal-backdrop').forEach(modal => {
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('open');
+      if (e.target === modal) {
+        modal.classList.remove('open');
+        const loginErrorAlert = document.getElementById('loginErrorAlert');
+        if (loginErrorAlert) loginErrorAlert.style.display = 'none';
+      }
     });
   });
 
-  // 9. Reset to Defaults Demo Button
+  // 9. Reset to Defaults Demo Button (Admin Guarded)
   const resetBtn = document.getElementById('resetDataBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      if (confirm('Reset budget, members, and transactions back to initial demo data?')) {
-        appState.resetToDefaults();
-        renderAll();
-        showToast('App reset to clean demo state.', 'info');
-      }
+      requireAdmin(() => {
+        if (confirm('Reset budget, members, and transactions back to initial demo data?')) {
+          appState.resetToDefaults();
+          renderAll();
+          showToast('App reset to clean demo state.', 'info');
+        }
+      }, 'Admin login required to reset project ledger.');
     });
   }
 
@@ -1098,6 +1369,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial Full Render
   renderAll();
+
+  // Initialize Admin Authentication UI State
+  updateAuthUI();
 
   // Initialize Firebase Hook placeholder
   initFirebaseApp();

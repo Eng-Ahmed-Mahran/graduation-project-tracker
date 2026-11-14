@@ -44,12 +44,22 @@
               </svg>
             </button>
             <span class="badge badge-accent">6-MEMBER TEAM</span>
+            <span class="badge badge-rose" id="authStatusBadge">🔒 VIEW ONLY</span>
           </div>
           <p class="header-subtitle">Continuous Rolling Ledger &bull; Budget, Transactions &amp; Settlement Accountant</p>
         </div>
       </div>
 
       <div class="header-right">
+        <!-- Admin Authentication Button -->
+        <button class="btn btn-primary btn-sm btn-glow" id="authBtn" title="Admin Login / Logout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="authBtnIcon">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span id="authBtnText">Admin Login</span>
+        </button>
+
         <!-- Budget Target Button -->
         <button class="btn btn-secondary btn-sm" id="openBudgetModalBtn" title="Set Overall Team Budget">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -145,7 +155,7 @@
           </svg>
         </div>
         <div class="kpi-content">
-          <span class="kpi-label">FAIR SHARE (TOTAL ÷ 6)</span>
+          <span class="kpi-label">FAIR SHARE (TOTAL / 6)</span>
           <h2 class="kpi-value font-mono text-cyan" id="kpiFairShare">0 <span class="currency">EGP</span></h2>
           <span class="kpi-subtext">Strict 1/6 per person split</span>
         </div>
@@ -198,6 +208,11 @@
               <h2 id="ledgerFormTitle">Log Project Activity</h2>
               <p id="ledgerFormSubtitle">Record team hardware purchases or direct peer-to-peer debt reimbursements</p>
             </div>
+            <!-- Auth Status Pill Indicator -->
+            <button type="button" class="form-auth-pill" id="formAuthPill" title="Click to Authenticate as Admin">
+              <span class="auth-pill-dot dot-rose" id="authPillDot"></span>
+              <span id="formAuthPillText">View Only &bull; Log In to Edit</span>
+            </button>
           </div>
 
           <!-- Transaction Mode Selector Tabs -->
@@ -415,6 +430,82 @@
       <p>Graduation Project Team Accountant &bull; Pure Integer Financial Dashboard &bull; GitHub Pages &amp; Firebase Compatible</p>
     </footer>
 
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: ADMIN AUTHENTICATION (LOGIN POPUP)                         -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="loginModal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <div class="modal-title-with-icon">
+          <div class="modal-icon-badge icon-cyan">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <div>
+            <h3>Admin Authentication</h3>
+            <p class="modal-subtitle" id="loginModalSubtitle">Please authenticate as administrator to record payments, log purchases, or modify project settings.</p>
+          </div>
+        </div>
+        <button class="icon-btn-ghost close-modal-btn" data-close="loginModal">&times;</button>
+      </div>
+
+      <form id="loginForm" autocomplete="off">
+        <!-- Error Alert -->
+        <div class="login-alert-box alert-error" id="loginErrorAlert" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="loginErrorMsg">Invalid credentials. Try username: admin, password: 123</span>
+        </div>
+
+        <div class="form-group">
+          <label for="loginUsername">Username <span class="required">*</span></label>
+          <input type="text" id="loginUsername" placeholder="e.g. admin" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password <span class="required">*</span></label>
+          <div class="password-input-wrap">
+            <input type="password" id="loginPassword" placeholder="Enter password" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pwd" id="togglePasswordBtn" title="Show / Hide Password">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="pwdEyeIcon">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Helpful Credentials Info Box -->
+        <div class="login-credentials-callout">
+          <div class="callout-icon">🔑</div>
+          <div class="callout-info">
+            <div class="callout-title">Admin Credentials:</div>
+            <div class="callout-creds">
+              <span>Username: <code>admin</code></span> &bull; <span>Password: <code>123</code></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal-btn" data-close="loginModal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow" id="loginSubmitBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Unlock Admin Access
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- ================================================================= -->

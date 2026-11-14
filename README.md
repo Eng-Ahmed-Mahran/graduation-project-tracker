@@ -48,6 +48,20 @@ Log either shared hardware expenditures or direct peer debt reimbursements:
 
 ---
 
+### 5. Admin Authentication & View-Only Protection
+Prevents accidental edits when sharing the website with teammates or supervisors:
+- **Default View-Only Mode (`🔒 VIEW ONLY`):** Anyone with the link can explore all real-time financial stats, member balances, optimal settlement recommendations, and the complete transaction history without risk of accidental edits or deletions.
+- **Interactive Login Rectangle Modal:**
+  - Clicking the **Admin Login** button at the top opens the glassmorphic login rectangle popup.
+  - Attempting to log a purchase, submit a payment, click `⚡ Pay`, change the budget ceiling, rename teammates, delete transactions, or reset data automatically prompts the login modal.
+  - Once authenticated, previous pending actions immediately resume!
+- **Default Admin Credentials:**
+  - **Username:** `admin`
+  - **Password:** `123`
+- **Session-Based Security:** Authenticated state persists for the session (`sessionStorage`), meaning teammates visiting on their own devices will always default safely to view-only mode unless they explicitly log in.
+
+---
+
 ## 📁 File Structure
 
 ```text
