@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=2.3">
 </head>
 <body>
   <!-- Ambient Glassmorphic Background Glows (Contained to prevent mobile viewport stretching) -->
@@ -208,11 +208,6 @@
               <h2 id="ledgerFormTitle">Log Project Activity</h2>
               <p id="ledgerFormSubtitle">Record team hardware purchases or direct peer-to-peer debt reimbursements</p>
             </div>
-            <!-- Auth Status Pill Indicator -->
-            <button type="button" class="form-auth-pill" id="formAuthPill" title="Click to Authenticate as Admin">
-              <span class="auth-pill-dot dot-rose" id="authPillDot"></span>
-              <span id="formAuthPillText">View Only &bull; Log In to Edit</span>
-            </button>
           </div>
 
           <!-- Transaction Mode Selector Tabs -->
@@ -292,13 +287,6 @@
 
           <!-- FORM: Mode 2 - Direct Peer-to-Peer Debt Payment (Partial or Full) -->
           <form id="transferForm" class="expense-form" autocomplete="off" style="display: none;">
-            <div class="helper-callout">
-              <div class="callout-icon">💡</div>
-              <div class="callout-text">
-                <strong>Direct Peer Settlement:</strong> Use this when you pay a teammate directly (via InstaPay, Vodafone Cash, or cash). It reduces your debt and their credit <em>without</em> inflating the total project expenditure.
-              </div>
-            </div>
-
             <div class="form-row-grid">
               
               <!-- Field: Who is paying? (Debtor) -->
@@ -548,6 +536,6 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Main JavaScript Logic -->
-  <script src="script.js?v=2.2"></script>
+  <script src="script.js?v=2.3"></script>
 </body>
 </html>

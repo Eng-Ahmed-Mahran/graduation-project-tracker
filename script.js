@@ -751,9 +751,6 @@ function updateAuthUI() {
   const authBtnText = document.getElementById('authBtnText');
   const authBtnIcon = document.getElementById('authBtnIcon');
   const authStatusBadge = document.getElementById('authStatusBadge');
-  const formAuthPill = document.getElementById('formAuthPill');
-  const authPillDot = document.getElementById('authPillDot');
-  const formAuthPillText = document.getElementById('formAuthPillText');
 
   if (authed) {
     if (authBtn) {
@@ -771,15 +768,6 @@ function updateAuthUI() {
       authStatusBadge.className = 'badge badge-emerald';
       authStatusBadge.textContent = '🔓 ADMIN MODE';
     }
-    if (formAuthPill) {
-      formAuthPill.classList.add('is-admin');
-    }
-    if (authPillDot) {
-      authPillDot.className = 'auth-pill-dot dot-emerald';
-    }
-    if (formAuthPillText) {
-      formAuthPillText.textContent = 'Admin Mode • Full Access';
-    }
   } else {
     if (authBtn) {
       authBtn.className = 'btn btn-primary btn-sm btn-glow';
@@ -795,15 +783,6 @@ function updateAuthUI() {
     if (authStatusBadge) {
       authStatusBadge.className = 'badge badge-rose';
       authStatusBadge.textContent = '🔒 VIEW ONLY';
-    }
-    if (formAuthPill) {
-      formAuthPill.classList.remove('is-admin');
-    }
-    if (authPillDot) {
-      authPillDot.className = 'auth-pill-dot dot-rose';
-    }
-    if (formAuthPillText) {
-      formAuthPillText.textContent = 'View Only • Log In to Edit';
     }
   }
 }
@@ -900,17 +879,6 @@ function attachEventListeners() {
           setAdminAuth(false);
           showToast('Logged out. Switched to View-Only mode.', 'info');
         }
-      } else {
-        openLoginModal();
-      }
-    });
-  }
-
-  const formAuthPill = document.getElementById('formAuthPill');
-  if (formAuthPill) {
-    formAuthPill.addEventListener('click', () => {
-      if (isAdmin()) {
-        showToast('✓ Admin Mode Active: You have full permissions.', 'success');
       } else {
         openLoginModal();
       }
