@@ -854,7 +854,7 @@ function requireAdmin(actionCallback, contextMessage) {
 
   pendingAdminAction = actionCallback;
   openLoginModal(contextMessage || 'Please authenticate as administrator to record payments, modify expenses, or change project settings.');
-  showToast('🔒 Admin Login Required: Please authenticate with admin / 123', 'info');
+  showToast('🔒 Admin Login Required: Please log in as administrator to proceed.', 'info');
   return false;
 }
 
@@ -903,7 +903,7 @@ function attachEventListeners() {
           showToast('Logged out. Switched to View-Only mode.', 'info');
         }
       } else {
-        openLoginModal('Enter admin credentials (admin / 123) to unlock full editing and payment access.');
+        openLoginModal('Enter admin credentials to unlock full editing and payment access.');
       }
     });
   }
@@ -964,7 +964,7 @@ function attachEventListeners() {
           loginErrorAlert.style.display = 'flex';
         }
         if (loginErrorMsg) {
-          loginErrorMsg.textContent = 'Incorrect credentials. Username: admin | Password: 123';
+          loginErrorMsg.textContent = 'Incorrect username or password. Please try again.';
         }
         const passInput = document.getElementById('loginPassword');
         if (passInput) {

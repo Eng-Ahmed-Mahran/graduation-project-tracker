@@ -55,9 +55,7 @@ Prevents accidental edits when sharing the website with teammates or supervisors
   - Clicking the **Admin Login** button at the top opens the glassmorphic login rectangle popup.
   - Attempting to log a purchase, submit a payment, click `⚡ Pay`, change the budget ceiling, rename teammates, delete transactions, or reset data automatically prompts the login modal.
   - Once authenticated, previous pending actions immediately resume!
-- **Default Admin Credentials:**
-  - **Username:** `admin`
-  - **Password:** `123`
+- **Admin Credentials:** Configurable inside `script.js` under `ADMIN_CREDENTIALS`.
 - **Session-Based Security:** Authenticated state persists for the session (`sessionStorage`), meaning teammates visiting on their own devices will always default safely to view-only mode unless they explicitly log in.
 
 ---
