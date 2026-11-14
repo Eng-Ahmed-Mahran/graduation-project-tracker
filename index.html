@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=3.2">
+  <link rel="stylesheet" href="styles.css?v=3.3">
 </head>
 <body>
   <!-- Ambient Glassmorphic Background Glows (Contained to prevent mobile viewport stretching) -->
@@ -51,13 +51,13 @@
       </div>
 
       <div class="header-right">
-        <!-- Admin Authentication Button -->
-        <button class="btn btn-primary btn-sm btn-glow" id="authBtn" title="Admin Login / Logout">
+        <!-- Authentication Button -->
+        <button class="btn btn-primary btn-sm btn-glow" id="authBtn" title="Login">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="authBtnIcon">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span id="authBtnText">Admin Login</span>
+          <span id="authBtnText">Login</span>
         </button>
 
         <!-- Budget Target Button (Admin Only) -->
@@ -434,7 +434,7 @@
             </svg>
           </div>
           <div>
-            <h3>Admin Authentication</h3>
+            <h3>Login</h3>
           </div>
         </div>
         <button class="icon-btn-ghost close-modal-btn" data-close="loginModal">&times;</button>
@@ -477,7 +477,7 @@
               <polyline points="10 17 15 12 10 7"></polyline>
               <line x1="15" y1="12" x2="3" y2="12"></line>
             </svg>
-            Unlock Admin Access
+            Login
           </button>
         </div>
       </form>
@@ -618,6 +618,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <!-- Main JavaScript Logic -->
-  <script src="script.js?v=3.2"></script>
+  <script src="script.js?v=3.3"></script>
 </body>
 </html>

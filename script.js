@@ -771,9 +771,9 @@ function updateAuthUI() {
   if (authed) {
     if (authBtn) {
       authBtn.className = 'btn btn-secondary btn-sm';
-      authBtn.title = 'Click to Log Out (Admin Mode Active)';
+      authBtn.title = 'Logout';
     }
-    if (authBtnText) authBtnText.textContent = 'Logout (Admin)';
+    if (authBtnText) authBtnText.textContent = 'Logout';
     if (authBtnIcon) {
       authBtnIcon.innerHTML = `
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -787,9 +787,9 @@ function updateAuthUI() {
   } else {
     if (authBtn) {
       authBtn.className = 'btn btn-primary btn-sm btn-glow';
-      authBtn.title = 'Click to Log In as Admin';
+      authBtn.title = 'Login';
     }
-    if (authBtnText) authBtnText.textContent = 'Admin Login';
+    if (authBtnText) authBtnText.textContent = 'Login';
     if (authBtnIcon) {
       authBtnIcon.innerHTML = `
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -847,7 +847,7 @@ function requireAdmin(actionCallback) {
 
   pendingAdminAction = actionCallback;
   openLoginModal();
-  showToast('🔒 Admin Login Required: Please log in as administrator to proceed.', 'info');
+  showToast('🔒 Login Required: Please log in to proceed.', 'info');
   return false;
 }
 
