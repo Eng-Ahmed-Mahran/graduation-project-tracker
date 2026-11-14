@@ -609,6 +609,12 @@ function renderTransactionsFeed() {
 
           <div class="tx-right">
             <span class="tx-amount text-emerald">+ ${formatEGP(tx.amount)} EGP</span>
+            <button class="icon-btn-ghost edit-tx-btn admin-only" data-tx-id="${tx.id}" title="Edit Transfer Record">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </button>
             <button class="icon-btn-ghost delete-tx-btn admin-only" data-tx-id="${tx.id}" title="Delete Transfer Record">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -644,6 +650,12 @@ function renderTransactionsFeed() {
 
         <div class="tx-right">
           <span class="tx-amount">${formatEGP(tx.amount)} EGP</span>
+          <button class="icon-btn-ghost edit-tx-btn admin-only" data-tx-id="${tx.id}" title="Edit Expense">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
           <button class="icon-btn-ghost delete-tx-btn admin-only" data-tx-id="${tx.id}" title="Delete Expense">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
@@ -1226,6 +1238,132 @@ function attachEventListeners() {
       teamModal.classList.remove('open');
       renderAll();
       showToast('Team member profiles updated successfully.', 'success');
+    });
+  }
+
+  // 7b. Edit Transaction Modal & Handlers (Admin Guarded)
+  const editTxModal = document.getElementById('editTxModal');
+  const editTxForm = document.getElementById('editTxForm');
+
+  function openEditTxModal(tx) {
+    if (!editTxModal) return;
+
+    document.getElementById('editTxId').value = tx.id;
+    document.getElementById('editTxType').value = tx.type || 'expense';
+
+    const payerGroup = document.getElementById('editTxPayerGroup');
+    const fromGroup = document.getElementById('editTxFromGroup');
+    const toGroup = document.getElementById('editTxToGroup');
+    const payerSelect = document.getElementById('editTxPayerSelect');
+    const fromSelect = document.getElementById('editTxFromSelect');
+    const toSelect = document.getElementById('editTxToSelect');
+    const descLabel = document.getElementById('editTxDescLabel');
+    const descInput = document.getElementById('editTxDescription');
+    const amountInput = document.getElementById('editTxAmount');
+    const dateInput = document.getElementById('editTxDate');
+    const modalTitle = document.getElementById('editTxModalTitle');
+
+    // Populate dropdown options with team members
+    const membersHtml = appState.members.map(m => `
+      <option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.role)})</option>
+    `).join('');
+
+    if (payerSelect) payerSelect.innerHTML = membersHtml;
+    if (fromSelect) fromSelect.innerHTML = membersHtml;
+    if (toSelect) toSelect.innerHTML = membersHtml;
+
+    if (tx.type === 'transfer') {
+      if (modalTitle) modalTitle.textContent = 'Edit Direct Reimbursement';
+      if (payerGroup) payerGroup.style.display = 'none';
+      if (fromGroup) fromGroup.style.display = 'block';
+      if (toGroup) toGroup.style.display = 'block';
+      if (fromSelect) fromSelect.value = tx.fromId;
+      if (toSelect) toSelect.value = tx.toId;
+      if (descLabel) descLabel.innerHTML = 'Transfer Note <span class="required">*</span>';
+      if (descInput) descInput.value = tx.note || 'Direct payment';
+    } else {
+      if (modalTitle) modalTitle.textContent = 'Edit Project Purchase';
+      if (payerGroup) payerGroup.style.display = 'block';
+      if (fromGroup) fromGroup.style.display = 'none';
+      if (toGroup) toGroup.style.display = 'none';
+      if (payerSelect) payerSelect.value = tx.payerId;
+      if (descLabel) descLabel.innerHTML = 'What did they buy? <span class="required">*</span>';
+      if (descInput) descInput.value = tx.description || '';
+    }
+
+    if (amountInput) amountInput.value = Math.round(Number(tx.amount));
+    if (dateInput) dateInput.value = tx.date || '';
+
+    editTxModal.classList.add('open');
+  }
+
+  // Click delegation for edit-tx-btn
+  document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-tx-btn');
+    if (!editBtn) return;
+    const txId = editBtn.dataset.txId;
+    const tx = appState.expenses.find(t => t.id === txId);
+    if (!tx) return;
+
+    requireAdmin(() => {
+      openEditTxModal(tx);
+    });
+  });
+
+  if (editTxForm) {
+    editTxForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      requireAdmin(() => {
+        const id = document.getElementById('editTxId').value;
+        const txIndex = appState.expenses.findIndex(t => t.id === id);
+        if (txIndex === -1) return;
+
+        const type = document.getElementById('editTxType').value;
+        const amount = Math.round(Number(document.getElementById('editTxAmount').value));
+        const date = document.getElementById('editTxDate').value || new Date().toISOString().split('T')[0];
+
+        if (isNaN(amount) || amount <= 0) {
+          showToast('Please enter a valid positive whole amount.', 'error');
+          return;
+        }
+
+        if (type === 'transfer') {
+          const fromId = document.getElementById('editTxFromSelect').value;
+          const toId = document.getElementById('editTxToSelect').value;
+          if (fromId === toId) {
+            showToast('Sender and recipient cannot be the same person.', 'error');
+            return;
+          }
+          const note = (document.getElementById('editTxDescription').value || '').trim() || 'Direct reimbursement';
+          appState.expenses[txIndex] = {
+            ...appState.expenses[txIndex],
+            fromId,
+            toId,
+            amount,
+            note,
+            date
+          };
+        } else {
+          const payerId = document.getElementById('editTxPayerSelect').value;
+          const description = (document.getElementById('editTxDescription').value || '').trim();
+          if (!description) {
+            showToast('Please enter what was purchased.', 'error');
+            return;
+          }
+          appState.expenses[txIndex] = {
+            ...appState.expenses[txIndex],
+            payerId,
+            description,
+            amount,
+            date
+          };
+        }
+
+        appState.save();
+        renderAll();
+        if (editTxModal) editTxModal.classList.remove('open');
+        showToast('✓ Transaction updated and synced successfully.', 'success');
+      });
     });
   }
 

@@ -416,6 +416,16 @@ body.is-admin .admin-only {
   background: rgba(0, 242, 254, 0.1);
 }
 
+.delete-tx-btn:hover {
+  color: #f43f5e !important;
+  background: rgba(244, 63, 94, 0.15) !important;
+}
+
+.edit-tx-btn:hover {
+  color: var(--neon-cyan) !important;
+  background: rgba(0, 242, 254, 0.15) !important;
+}
+
 /* --- Progress Banner --- */
 .progress-banner {
   padding: 1.35rem 1.75rem;

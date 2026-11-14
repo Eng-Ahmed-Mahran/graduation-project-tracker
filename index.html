@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=3.1">
+  <link rel="stylesheet" href="styles.css?v=3.2">
 </head>
 <body>
   <!-- Ambient Glassmorphic Background Glows (Contained to prevent mobile viewport stretching) -->
@@ -532,6 +532,84 @@
     </div>
   </div>
 
+  <!-- ================================================================= -->
+  <!-- MODAL: EDIT TRANSACTION (ADMIN ONLY)                             -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="editTxModal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <div class="modal-title-with-icon">
+          <div class="modal-icon-badge icon-cyan">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 id="editTxModalTitle">Edit Transaction</h3>
+          </div>
+        </div>
+        <button class="icon-btn-ghost close-modal-btn" data-close="editTxModal">&times;</button>
+      </div>
+
+      <form id="editTxForm" autocomplete="off">
+        <input type="hidden" id="editTxId">
+        <input type="hidden" id="editTxType">
+
+        <div class="form-row-grid">
+          <!-- Fields for Expense (Who paid?) -->
+          <div class="form-group col-span-2" id="editTxPayerGroup">
+            <label for="editTxPayerSelect">Who paid? <span class="required">*</span></label>
+            <div class="custom-select-wrap">
+              <select id="editTxPayerSelect"></select>
+            </div>
+          </div>
+
+          <!-- Fields for Transfer (From & To) -->
+          <div class="form-group col-span-2" id="editTxFromGroup" style="display: none;">
+            <label for="editTxFromSelect">Who sent money? <span class="required">*</span></label>
+            <div class="custom-select-wrap">
+              <select id="editTxFromSelect"></select>
+            </div>
+          </div>
+
+          <div class="form-group col-span-2" id="editTxToGroup" style="display: none;">
+            <label for="editTxToSelect">Who received money? <span class="required">*</span></label>
+            <div class="custom-select-wrap">
+              <select id="editTxToSelect"></select>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group col-span-2">
+            <label for="editTxAmount">Amount (in EGP) <span class="required">*</span></label>
+            <div class="currency-input-wrap">
+              <span class="currency-prefix">EGP</span>
+              <input type="number" id="editTxAmount" step="1" min="1" required>
+            </div>
+          </div>
+
+          <!-- Description / Note -->
+          <div class="form-group col-span-2">
+            <label for="editTxDescription" id="editTxDescLabel">What did they buy? <span class="required">*</span></label>
+            <input type="text" id="editTxDescription" required maxlength="90">
+          </div>
+
+          <!-- Date -->
+          <div class="form-group col-span-2">
+            <label for="editTxDate">Date</label>
+            <input type="date" id="editTxDate">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal-btn" data-close="editTxModal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow">Update Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification Popups -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
@@ -540,6 +618,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <!-- Main JavaScript Logic -->
-  <script src="script.js?v=3.1"></script>
+  <script src="script.js?v=3.2"></script>
 </body>
 </html>
