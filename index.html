@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROJECT NEXUS // Stage Tracker & Automated Team Accountant</title>
+  <meta name="description" content="Engineering Graduation Project Stage Tracker and Automated Rolling Team Ledger for 6-member teams.">
+  
+  <!-- Modern Engineering Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient Glassmorphic Background Glows -->
+  <div class="ambient-glow glow-cyan"></div>
+  <div class="ambient-glow glow-emerald"></div>
+  <div class="ambient-glow glow-purple"></div>
+
+  <!-- App Wrapper -->
+  <div class="app-container">
+
+    <!-- Top Navigation / Header -->
+    <header class="glass-header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="header-title-row">
+            <h1 id="projectTitleDisplay">ENGINEERING GRADUATION PROJECT</h1>
+            <button class="icon-btn-ghost" id="editProjectNameBtn" title="Edit Project Title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </button>
+            <span class="badge badge-accent">6-MEMBER TEAM</span>
+          </div>
+          <p class="header-subtitle">Continuous Rolling Ledger &amp; Stage Milestone Controller</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Firebase / Cloud Status Indicator -->
+        <div class="status-indicator" id="cloudStatusBadge" title="Ready to connect with Firebase">
+          <span class="status-dot"></span>
+          <span class="status-text">Local Storage (Firebase Ready)</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <button class="btn btn-secondary btn-sm" id="exportDataBtn" title="Export Ledger JSON Backup">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export
+        </button>
+
+        <button class="btn btn-secondary btn-sm" id="manageTeamBtn" title="Customize Team Member Names">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Team
+        </button>
+
+        <button class="btn btn-ghost btn-sm" id="resetDataBtn" title="Reload Default Demo Data">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Reset
+        </button>
+      </div>
+    </header>
+
+    <!-- Project Progress & Milestone Banner -->
+    <section class="progress-banner glass-card">
+      <div class="progress-header">
+        <div class="progress-title-wrap">
+          <span class="progress-label">OVERALL PROJECT READINESS</span>
+          <span class="progress-count" id="stageProgressCount">0 of 0 Milestones Done</span>
+        </div>
+        <div class="progress-percentage-display">
+          <span id="overallPercentText">0</span><span class="percent-symbol">%</span>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="overallProgressBar" style="width: 0%;"></div>
+      </div>
+      <div class="progress-footer-stats">
+        <div class="stat-chip">
+          <span class="chip-dot dot-cyan"></span>
+          <span>Active Phase: <strong id="activePhaseName">Loading...</strong></span>
+        </div>
+        <div class="stat-chip">
+          <span class="chip-dot dot-emerald"></span>
+          <span>Ledger Equilibrium: <strong id="ledgerEquilibrium">Verified (Sum = 0)</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top KPI Financial Overview Bar -->
+    <section class="kpi-grid">
+      <!-- Total Project Cost -->
+      <div class="kpi-card glass-card">
+        <div class="kpi-icon-wrap icon-cyan">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">TOTAL PROJECT EXPENDITURE</span>
+          <h2 class="kpi-value font-mono" id="kpiTotalCost">0.00 <span class="currency">EGP</span></h2>
+          <span class="kpi-subtext" id="kpiExpenseCount">0 transactions recorded</span>
+        </div>
+      </div>
+
+      <!-- Fair Share per Person -->
+      <div class="kpi-card glass-card highlight-card">
+        <div class="kpi-icon-wrap icon-purple">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <line x1="19" y1="8" x2="19" y2="14"></line>
+            <line x1="22" y1="11" x2="16" y2="11"></line>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">FAIR SHARE (TOTAL ÷ 6)</span>
+          <h2 class="kpi-value font-mono text-cyan" id="kpiFairShare">0.00 <span class="currency">EGP</span></h2>
+          <span class="kpi-subtext">Strict 1/6 per person split</span>
+        </div>
+      </div>
+
+      <!-- Highest Contributor -->
+      <div class="kpi-card glass-card">
+        <div class="kpi-icon-wrap icon-emerald">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="7"></circle>
+            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">TOP SPONSOR</span>
+          <h2 class="kpi-value font-mono text-emerald" id="kpiTopFunder">--</h2>
+          <span class="kpi-subtext" id="kpiTopFunderAmount">0.00 EGP contributed</span>
+        </div>
+      </div>
+
+      <!-- Settlement Status -->
+      <div class="kpi-card glass-card">
+        <div class="kpi-icon-wrap icon-amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">REQUIRED SETTLEMENTS</span>
+          <h2 class="kpi-value font-mono text-amber" id="kpiSettlementCount">0</h2>
+          <span class="kpi-subtext">Direct transfers to equalize</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Dual-Section Dashboard Grid -->
+    <main class="dashboard-main-grid">
+
+      <!-- ================================================================= -->
+      <!-- SECTION A: PROJECT STAGE TRACKER                                 -->
+      <!-- ================================================================= -->
+      <section class="tracker-column" aria-label="Project Stage Tracker">
+        <div class="glass-card section-card">
+          <div class="section-card-header">
+            <div class="section-title-wrap">
+              <div class="section-badge">SECTION A</div>
+              <h2>Project Stage Tracker</h2>
+              <p>Milestone execution status for engineering deliverable deadlines</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="openAddStageModalBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Stage
+            </button>
+          </div>
+
+          <!-- Stage Filter Tabs -->
+          <div class="filter-tab-bar">
+            <button class="filter-tab active" data-filter="all">All Stages (<span id="countAllStages">0</span>)</button>
+            <button class="filter-tab" data-filter="in-progress">In Progress (<span id="countActiveStages">0</span>)</button>
+            <button class="filter-tab" data-filter="completed">Completed (<span id="countDoneStages">0</span>)</button>
+          </div>
+
+          <!-- Stages List Container -->
+          <div class="stages-list-container" id="stagesListContainer">
+            <!-- Dynamically injected via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- SECTION B: LIVING LEDGER & EXPENSE ACCOUNTANT                     -->
+      <!-- ================================================================= -->
+      <section class="ledger-column" aria-label="Living Ledger & Expense Tracker">
+        
+        <!-- Input Form Card: Log New Expense -->
+        <div class="glass-card section-card">
+          <div class="section-card-header">
+            <div class="section-title-wrap">
+              <div class="section-badge badge-emerald">SECTION B</div>
+              <h2>Log Project Purchase</h2>
+              <p>Record hardware, components, or services in real-time</p>
+            </div>
+          </div>
+
+          <form id="expenseForm" class="expense-form" autocomplete="off">
+            <div class="form-row-grid">
+              
+              <!-- Field: Who Paid? -->
+              <div class="form-group">
+                <label for="payerSelect">Who paid? <span class="required">*</span></label>
+                <div class="custom-select-wrap">
+                  <select id="payerSelect" required>
+                    <option value="" disabled selected>Select Team Member</option>
+                    <!-- Options populated from team members array -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Field: Amount in EGP -->
+              <div class="form-group">
+                <label for="expenseAmount">Amount (in EGP) <span class="required">*</span></label>
+                <div class="currency-input-wrap">
+                  <span class="currency-prefix">EGP</span>
+                  <input type="number" id="expenseAmount" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
+                <!-- Quick Amount Increment Pills -->
+                <div class="quick-amount-row">
+                  <button type="button" class="quick-pill" data-add="50">+50</button>
+                  <button type="button" class="quick-pill" data-add="100">+100</button>
+                  <button type="button" class="quick-pill" data-add="250">+250</button>
+                  <button type="button" class="quick-pill" data-add="500">+500</button>
+                  <button type="button" class="quick-pill" data-add="1000">+1k</button>
+                </div>
+              </div>
+
+              <!-- Field: What did they buy? -->
+              <div class="form-group col-span-2">
+                <label for="expenseDescription">What did they buy? <span class="required">*</span></label>
+                <input type="text" id="expenseDescription" placeholder="e.g. STM32 MCU, 3D Filament, Sensor Kit, PCB Print..." required maxlength="90">
+              </div>
+
+              <!-- Field: Category -->
+              <div class="form-group">
+                <label for="expenseCategory">Category</label>
+                <select id="expenseCategory">
+                  <option value="Hardware & Microcontrollers">Hardware & Microcontrollers</option>
+                  <option value="Sensors & Actuators">Sensors & Actuators</option>
+                  <option value="PCB & Electronics">PCB & Electronics</option>
+                  <option value="3D Printing & Materials">3D Printing & Materials</option>
+                  <option value="Tools & Fasteners">Tools & Fasteners</option>
+                  <option value="Software & Cloud APIs">Software & Cloud APIs</option>
+                  <option value="Documentation & Printing">Documentation & Printing</option>
+                  <option value="Logistics & Misc">Logistics & Misc</option>
+                </select>
+              </div>
+
+              <!-- Field: Date -->
+              <div class="form-group">
+                <label for="expenseDate">Purchase Date</label>
+                <input type="date" id="expenseDate">
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-glow" id="submitExpenseBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+                Record Purchase &amp; Recalculate
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- The Rolling Balances: 6 Member Dashboard -->
+        <div class="glass-card section-card">
+          <div class="section-card-header">
+            <div class="section-title-wrap">
+              <h2>Rolling Balances Dashboard (6 Members)</h2>
+              <p>Dynamic accounting: (+ Green = Owed by team | - Red = In debt to team)</p>
+            </div>
+            <div class="balance-legend">
+              <span class="legend-item"><span class="legend-dot dot-emerald"></span> Owed Money</span>
+              <span class="legend-item"><span class="legend-dot dot-rose"></span> In Debt</span>
+              <span class="legend-item"><span class="legend-dot dot-neutral"></span> Settled</span>
+            </div>
+          </div>
+
+          <!-- 6-Member Balances Grid -->
+          <div class="balances-grid" id="balancesGrid">
+            <!-- Dynamically populated 6 cards -->
+          </div>
+        </div>
+
+        <!-- Smart Debt Settlement Recommendations -->
+        <div class="glass-card section-card">
+          <div class="section-card-header">
+            <div class="section-title-wrap">
+              <h2>Optimal Settlement Matrix</h2>
+              <p>Minimum required transactions to balance the entire team to 0.00 EGP</p>
+            </div>
+          </div>
+          <div class="settlements-container" id="settlementsContainer">
+            <!-- Dynamically generated settlement actions -->
+          </div>
+        </div>
+
+        <!-- Transaction History Feed -->
+        <div class="glass-card section-card">
+          <div class="section-card-header">
+            <div class="section-title-wrap">
+              <h2>Transaction History Feed</h2>
+              <p>Continuous audit log of team expenditures</p>
+            </div>
+            <div class="feed-controls">
+              <input type="text" id="txSearchInput" class="search-input" placeholder="Search transactions...">
+            </div>
+          </div>
+
+          <div class="transactions-feed" id="transactionsFeed">
+            <!-- Dynamically populated transaction cards -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Graduation Project Accountant &amp; Stage Tracker &bull; Single-Page Responsive Dashboard &bull; GitHub Pages &amp; Firebase Compatible</p>
+    </footer>
+
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: ADD CUSTOM STAGE                                          -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="addStageModal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3>Add New Engineering Stage</h3>
+        <button class="icon-btn-ghost close-modal-btn" data-close="addStageModal">&times;</button>
+      </div>
+      <form id="addStageForm">
+        <div class="form-group">
+          <label for="newStageTitle">Stage Title <span class="required">*</span></label>
+          <input type="text" id="newStageTitle" placeholder="e.g. Ultrasonic Sensor Array Calibration" required>
+        </div>
+        <div class="form-group">
+          <label for="newStageDesc">Description &amp; Deliverables</label>
+          <textarea id="newStageDesc" rows="3" placeholder="Key outcomes, circuit tests, or software commits expected..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="newStageDeadline">Target Milestone Date</label>
+          <input type="date" id="newStageDeadline">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal-btn" data-close="addStageModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Stage</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: EDIT TEAM MEMBERS                                         -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="teamModal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3>Customize 6 Team Members</h3>
+        <button class="icon-btn-ghost close-modal-btn" data-close="teamModal">&times;</button>
+      </div>
+      <p class="modal-subtitle">Rename the 6 team members. All existing transactions and balance calculations will seamlessly preserve and bind to their updated names.</p>
+      <form id="editTeamForm">
+        <div class="team-edit-list" id="teamEditList">
+          <!-- 6 inputs generated dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal-btn" data-close="teamModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Member Names</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Popups -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Main JavaScript Logic -->
+  <script src="script.js"></script>
+</body>
+</html>
