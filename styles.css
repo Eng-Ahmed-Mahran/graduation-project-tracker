@@ -278,6 +278,15 @@ body {
   gap: 0.75rem;
 }
 
+/* Admin-only elements visibility control */
+.admin-only {
+  display: none !important;
+}
+
+body.is-admin .admin-only {
+  display: inline-flex !important;
+}
+
 .status-indicator {
   display: flex;
   align-items: center;

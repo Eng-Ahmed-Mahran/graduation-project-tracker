@@ -106,10 +106,12 @@ class ProjectState {
   }
 
   resetToDefaults() {
-    this.projectName = 'GRADUATION PROJECT BUDGET';
-    this.budgetTarget = 12000;
-    this.members = JSON.parse(JSON.stringify(DEFAULT_TEAM_MEMBERS));
-    this.expenses = JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
+    this.expenses = [];
+    this.save();
+  }
+
+  clearAllData() {
+    this.expenses = [];
     this.save();
   }
 }
@@ -607,7 +609,7 @@ function renderTransactionsFeed() {
 
           <div class="tx-right">
             <span class="tx-amount text-emerald">+ ${formatEGP(tx.amount)} EGP</span>
-            <button class="icon-btn-ghost delete-tx-btn" data-tx-id="${tx.id}" title="Delete Transfer Record">
+            <button class="icon-btn-ghost delete-tx-btn admin-only" data-tx-id="${tx.id}" title="Delete Transfer Record">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -642,7 +644,7 @@ function renderTransactionsFeed() {
 
         <div class="tx-right">
           <span class="tx-amount">${formatEGP(tx.amount)} EGP</span>
-          <button class="icon-btn-ghost delete-tx-btn" data-tx-id="${tx.id}" title="Delete Expense">
+          <button class="icon-btn-ghost delete-tx-btn admin-only" data-tx-id="${tx.id}" title="Delete Expense">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -747,6 +749,8 @@ function setAdminAuth(status) {
  */
 function updateAuthUI() {
   const authed = isAdmin();
+  document.body.classList.toggle('is-admin', authed);
+
   const authBtn = document.getElementById('authBtn');
   const authBtnText = document.getElementById('authBtnText');
   const authBtnIcon = document.getElementById('authBtnIcon');
@@ -1248,17 +1252,17 @@ function attachEventListeners() {
     });
   });
 
-  // 9. Reset to Defaults Demo Button (Admin Guarded)
+  // 9. Reset All / Clear Everything Button (Admin Guarded)
   const resetBtn = document.getElementById('resetDataBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       requireAdmin(() => {
-        if (confirm('Reset budget, members, and transactions back to initial demo data?')) {
+        if (confirm('Clear all transactions and reset the ledger to 0 EGP? All recorded purchases and payments will be wiped.')) {
           appState.resetToDefaults();
           renderAll();
-          showToast('App reset to clean demo state.', 'info');
+          showToast('✓ Ledger wiped! All transactions cleared to 0 EGP.', 'info');
         }
-      }, 'Admin login required to reset project ledger.');
+      });
     });
   }
 
