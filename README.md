@@ -48,19 +48,6 @@ Log either shared hardware expenditures or direct peer debt reimbursements:
 
 ---
 
-### 5. Category Budget Breakdown
-Tracks where team funds are going across domains:
-- ⚡ Hardware & Microcontrollers
-- 🔌 PCB & Electronics
-- 🖨️ 3D Printing & Materials
-- 📡 Sensors & Actuators
-- 🔧 Tools & Fasteners
-- 💻 Software & Cloud APIs
-- 📄 Documentation & Thesis
-- 📦 Logistics & Misc
-
----
-
 ## 📁 File Structure
 
 ```text

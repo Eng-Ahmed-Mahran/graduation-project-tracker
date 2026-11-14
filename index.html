@@ -184,9 +184,9 @@
     <main class="dashboard-main-grid">
 
       <!-- ================================================================= -->
-      <!-- LEFT COLUMN: LOG ACTIVITY & CATEGORY BREAKDOWN                    -->
+      <!-- LEFT COLUMN: LOG ACTIVITY (PURCHASES & DEBT REPAYMENTS)           -->
       <!-- ================================================================= -->
-      <aside class="finance-left-column" aria-label="Transaction Entry & Category Breakdown">
+      <aside class="finance-left-column" aria-label="Transaction Entry & Activity Log">
         
         <!-- Input Form Card: Log Activity (Purchase vs Direct Debt Payment) -->
         <div class="glass-card section-card" id="ledgerFormSection">
@@ -252,21 +252,6 @@
               <div class="form-group col-span-2">
                 <label for="expenseDescription">What did they buy? <span class="required">*</span></label>
                 <input type="text" id="expenseDescription" placeholder="e.g. STM32 MCU, 3D Filament, Sensor Kit, PCB Print..." required maxlength="90">
-              </div>
-
-              <!-- Field: Category -->
-              <div class="form-group col-span-2">
-                <label for="expenseCategory">Budget Category</label>
-                <select id="expenseCategory">
-                  <option value="Hardware & Microcontrollers">Hardware & Microcontrollers</option>
-                  <option value="Sensors & Actuators">Sensors & Actuators</option>
-                  <option value="PCB & Electronics">PCB & Electronics</option>
-                  <option value="3D Printing & Materials">3D Printing & Materials</option>
-                  <option value="Tools & Fasteners">Tools & Fasteners</option>
-                  <option value="Software & Cloud APIs">Software & Cloud APIs</option>
-                  <option value="Documentation & Thesis">Documentation & Thesis</option>
-                  <option value="Logistics & Misc">Logistics & Misc</option>
-                </select>
               </div>
 
               <!-- Field: Date -->
@@ -360,19 +345,6 @@
             </div>
           </form>
 
-        </div>
-
-        <!-- Budget Spending by Category Card -->
-        <div class="glass-card section-card">
-          <div class="section-card-header">
-            <div class="section-title-wrap">
-              <h2>Category Spending Breakdown</h2>
-              <p>Distribution of project expenditures across domains</p>
-            </div>
-          </div>
-          <div class="category-breakdown-list" id="categoryBreakdownList">
-            <!-- Dynamically populated category bars -->
-          </div>
         </div>
 
       </aside>

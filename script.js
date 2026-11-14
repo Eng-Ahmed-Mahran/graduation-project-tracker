@@ -33,7 +33,6 @@ const DEFAULT_EXPENSES = [
     type: 'expense',
     payerId: 'm1', // Ahmed
     description: 'STM32 Nucleo boards & Debugger Probes',
-    category: 'Hardware & Microcontrollers',
     amount: 2400,
     date: '2026-11-02'
   },
@@ -42,7 +41,6 @@ const DEFAULT_EXPENSES = [
     type: 'expense',
     payerId: 'm3', // Youssef
     description: '3D PETG Printing Filament Spools (x4)',
-    category: '3D Printing & Materials',
     amount: 1200,
     date: '2026-11-05'
   },
@@ -51,7 +49,6 @@ const DEFAULT_EXPENSES = [
     type: 'expense',
     payerId: 'm4', // Mohamed
     description: '4-Layer Custom PCB Fabrication & Stencil',
-    category: 'PCB & Electronics',
     amount: 1800,
     date: '2026-11-08'
   },
@@ -60,22 +57,9 @@ const DEFAULT_EXPENSES = [
     type: 'expense',
     payerId: 'm2', // Omar
     description: 'Ultrasonic Range Sensors & IMU 9-DOF',
-    category: 'Sensors & Actuators',
     amount: 600,
     date: '2026-11-10'
   }
-];
-
-// Pre-defined Budget Categories with UI Styling metadata
-const BUDGET_CATEGORIES = [
-  { name: 'Hardware & Microcontrollers', icon: '⚡', colorClass: 'bar-hw' },
-  { name: 'PCB & Electronics', icon: '🔌', colorClass: 'bar-pcb' },
-  { name: '3D Printing & Materials', icon: '🖨️', colorClass: 'bar-3d' },
-  { name: 'Sensors & Actuators', icon: '📡', colorClass: 'bar-sensors' },
-  { name: 'Tools & Fasteners', icon: '🔧', colorClass: 'bar-tools' },
-  { name: 'Software & Cloud APIs', icon: '💻', colorClass: 'bar-sw' },
-  { name: 'Documentation & Thesis', icon: '📄', colorClass: 'bar-doc' },
-  { name: 'Logistics & Misc', icon: '📦', colorClass: 'bar-misc' }
 ];
 
 /* ============================================================================
@@ -338,7 +322,6 @@ function renderAll() {
 
   renderHeaderAndBudget(ledger);
   renderFinancialKPIs(ledger);
-  renderCategoryBreakdown(ledger);
   renderBalancesGrid(ledger);
   renderSettlements(ledger);
   renderTransactionsFeed();
@@ -442,48 +425,6 @@ function renderFinancialKPIs(ledger) {
       : `Discrepancy: ${formatEGP(ledger.netSum)} EGP`;
     ledgerEquilibrium.style.color = isBalanced ? 'var(--emerald-light)' : 'var(--rose-light)';
   }
-}
-
-/**
- * Category Spending Breakdown Widget
- */
-function renderCategoryBreakdown(ledger) {
-  const container = document.getElementById('categoryBreakdownList');
-  if (!container) return;
-
-  const rawExpenses = appState.expenses.filter(e => e.type !== 'transfer');
-  const totalCost = ledger.totalCost;
-
-  // Aggregate spending by category
-  const categoryTotals = {};
-  rawExpenses.forEach(tx => {
-    const cat = tx.category || 'Logistics & Misc';
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(tx.amount || 0);
-  });
-
-  const categoriesWithSpending = BUDGET_CATEGORIES.map(cat => {
-    const spent = Math.round(categoryTotals[cat.name] || 0);
-    const percent = totalCost > 0 ? Math.round((spent / totalCost) * 100) : 0;
-    return { ...cat, spent, percent };
-  }).sort((a, b) => b.spent - a.spent);
-
-  container.innerHTML = categoriesWithSpending.map(cat => `
-    <div class="category-item">
-      <div class="category-item-header">
-        <span class="category-name">
-          <span>${cat.icon}</span>
-          <span>${escapeHTML(cat.name)}</span>
-        </span>
-        <div class="category-meta">
-          <span class="category-amount font-mono">${formatEGP(cat.spent)} EGP</span>
-          <span class="category-percent font-mono">(${cat.percent}%)</span>
-        </div>
-      </div>
-      <div class="category-bar-track">
-        <div class="category-bar-fill ${cat.colorClass}" style="width: ${cat.percent}%;"></div>
-      </div>
-    </div>
-  `).join('');
 }
 
 /**
@@ -614,7 +555,6 @@ function renderTransactionsFeed() {
         const payerName = payer ? payer.name.toLowerCase() : '';
         return (
           (tx.description || '').toLowerCase().includes(term) ||
-          (tx.category || '').toLowerCase().includes(term) ||
           payerName.includes(term)
         );
       }
@@ -694,8 +634,6 @@ function renderTransactionsFeed() {
             <span class="tx-title">${escapeHTML(tx.description)}</span>
             <div class="tx-meta">
               <span>Paid by <strong>${escapeHTML(payer.name.split(' ')[0])}</strong></span>
-              <span>&bull;</span>
-              <span class="tx-category-badge">${escapeHTML(tx.category || 'General')}</span>
               <span>&bull;</span>
               <span>${tx.date || 'Recent'}</span>
             </div>
@@ -817,7 +755,6 @@ function attachEventListeners() {
       const payerId = document.getElementById('payerSelect').value;
       const amount = Math.round(parseFloat(document.getElementById('expenseAmount').value));
       const description = document.getElementById('expenseDescription').value.trim();
-      const category = document.getElementById('expenseCategory').value;
       const date = document.getElementById('expenseDate').value || new Date().toISOString().split('T')[0];
 
       if (!payerId) {
@@ -836,7 +773,6 @@ function attachEventListeners() {
         payerId,
         amount,
         description,
-        category,
         date
       };
 
