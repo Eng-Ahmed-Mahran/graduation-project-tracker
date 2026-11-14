@@ -15,10 +15,12 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Ambient Glassmorphic Background Glows -->
-  <div class="ambient-glow glow-cyan"></div>
-  <div class="ambient-glow glow-emerald"></div>
-  <div class="ambient-glow glow-purple"></div>
+  <!-- Ambient Glassmorphic Background Glows (Contained to prevent mobile viewport stretching) -->
+  <div class="ambient-glow-wrapper" aria-hidden="true">
+    <div class="ambient-glow glow-cyan"></div>
+    <div class="ambient-glow glow-emerald"></div>
+    <div class="ambient-glow glow-purple"></div>
+  </div>
 
   <!-- App Wrapper -->
   <div class="app-container">
