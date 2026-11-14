@@ -811,14 +811,12 @@ function updateAuthUI() {
 /**
  * Opens the login modal popup rectangle
  */
-function openLoginModal(message) {
+function openLoginModal() {
   const modal = document.getElementById('loginModal');
-  const subtitle = document.getElementById('loginModalSubtitle');
   const errorAlert = document.getElementById('loginErrorAlert');
   const userInp = document.getElementById('loginUsername');
   const passInp = document.getElementById('loginPassword');
 
-  if (subtitle && message) subtitle.textContent = message;
   if (errorAlert) errorAlert.style.display = 'none';
   if (userInp) userInp.value = '';
   if (passInp) passInp.value = '';
@@ -846,14 +844,14 @@ function closeLoginModal() {
  * If authenticated, executes callback immediately and returns true.
  * If not authenticated, saves callback, opens the login popup rectangle, and returns false.
  */
-function requireAdmin(actionCallback, contextMessage) {
+function requireAdmin(actionCallback) {
   if (isAdmin()) {
     if (typeof actionCallback === 'function') actionCallback();
     return true;
   }
 
   pendingAdminAction = actionCallback;
-  openLoginModal(contextMessage || 'Please authenticate as administrator to record payments, modify expenses, or change project settings.');
+  openLoginModal();
   showToast('🔒 Admin Login Required: Please log in as administrator to proceed.', 'info');
   return false;
 }
@@ -903,7 +901,7 @@ function attachEventListeners() {
           showToast('Logged out. Switched to View-Only mode.', 'info');
         }
       } else {
-        openLoginModal('Enter admin credentials to unlock full editing and payment access.');
+        openLoginModal();
       }
     });
   }
@@ -914,7 +912,7 @@ function attachEventListeners() {
       if (isAdmin()) {
         showToast('✓ Admin Mode Active: You have full permissions.', 'success');
       } else {
-        openLoginModal('Enter admin credentials to unlock full editing and payment access.');
+        openLoginModal();
       }
     });
   }

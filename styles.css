@@ -1353,7 +1353,7 @@ body {
 /* Modal Title with Icon */
 .modal-title-with-icon {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.85rem;
 }
 
