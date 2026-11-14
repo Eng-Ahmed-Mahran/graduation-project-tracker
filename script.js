@@ -1,13 +1,14 @@
 /**
  * ============================================================================
- * PROJECT NEXUS: Stage Tracker & Automated Team Accountant
- * Architecture: Vanilla JavaScript (ES6+), Modular & Reactive State
+ * PROJECT NEXUS: Team Budget Controller & Automated Accountant
+ * Pure Focus: Money, Budget Consumption, Transactions & 6-Member Rolling Ledger
+ * Architecture: Vanilla JavaScript (ES6+), Modular & Pure Integer Accounting (EGP)
  * Ready for GitHub Pages deployment & Firebase Cloud Sync
  * ============================================================================
  */
 
 /* ============================================================================
-   1. DEFAULT DATA DEFINITIONS (Realistic Graduation Project Mock Data)
+   1. DEFAULT DATA DEFINITIONS (Realistic Graduation Project Financial Data)
    ============================================================================ */
 
 /**
@@ -24,120 +25,57 @@ const DEFAULT_TEAM_MEMBERS = [
 ];
 
 /**
- * Default Project Engineering Stages / Milestones
- */
-const DEFAULT_PROJECT_STAGES = [
-  {
-    id: 'stage_1',
-    order: 1,
-    title: 'Problem Definition & Requirements Specification',
-    desc: 'Functional & non-functional requirements, component selection matrix, and supervisor approval.',
-    status: 'completed', // 'pending' | 'in-progress' | 'completed'
-    targetDate: '2026-10-15',
-    completedAt: '2026-10-14'
-  },
-  {
-    id: 'stage_2',
-    order: 2,
-    title: 'System Architecture & Component Sourcing',
-    desc: 'BOM preparation, datasheet analysis, pinout mapping, and vendor quotation comparison.',
-    status: 'completed',
-    targetDate: '2026-10-30',
-    completedAt: '2026-10-29'
-  },
-  {
-    id: 'stage_3',
-    order: 3,
-    title: 'Hardware Purchasing & Core Components',
-    desc: 'Procurement of STM32 MCUs, LiDAR/Ultrasonic sensors, motor drivers, and battery packs.',
-    status: 'in-progress',
-    targetDate: '2026-11-20',
-    completedAt: null
-  },
-  {
-    id: 'stage_4',
-    order: 4,
-    title: 'PCB Schematic Design, Simulation & Layout',
-    desc: 'Altium/KiCad schematic design, power dissipation simulation, and Gerber export for fabrication.',
-    status: 'in-progress',
-    targetDate: '2026-12-05',
-    completedAt: null
-  },
-  {
-    id: 'stage_5',
-    order: 5,
-    title: 'Microcontroller Firmware & Driver Integration',
-    desc: 'FreeRTOS task setup, CAN bus / SPI communication drivers, and closed-loop control algorithms.',
-    status: 'pending',
-    targetDate: '2027-01-15',
-    completedAt: null
-  },
-  {
-    id: 'stage_6',
-    order: 6,
-    title: 'Chassis Fabrication & Mechanical Assembly',
-    desc: 'SolidWorks CAD structural design, CNC aluminum milling, and PETG 3D printing of brackets.',
-    status: 'pending',
-    targetDate: '2027-02-10',
-    completedAt: null
-  },
-  {
-    id: 'stage_7',
-    order: 7,
-    title: 'Comprehensive System Testing & Calibration',
-    desc: 'Full-loop sensor calibration, stress testing, fault diagnosis, and safety shutoff validation.',
-    status: 'pending',
-    targetDate: '2027-03-20',
-    completedAt: null
-  },
-  {
-    id: 'stage_8',
-    order: 8,
-    title: 'Final Engineering Thesis & Defense Presentation',
-    desc: 'Academic paper authoring, technical documentation, slide deck design, and live committee demo.',
-    status: 'pending',
-    targetDate: '2027-05-01',
-    completedAt: null
-  }
-];
-
-/**
- * Initial Realistic Expenses Pre-Loaded
- * Demonstrates the rolling accountant math right out of the box!
+ * Initial Realistic Project Purchases (Pre-loaded with whole integer numbers)
  */
 const DEFAULT_EXPENSES = [
   {
     id: 'tx_1',
+    type: 'expense',
     payerId: 'm1', // Ahmed
     description: 'STM32 Nucleo boards & Debugger Probes',
     category: 'Hardware & Microcontrollers',
-    amount: 2400.00,
+    amount: 2400,
     date: '2026-11-02'
   },
   {
     id: 'tx_2',
+    type: 'expense',
     payerId: 'm3', // Youssef
     description: '3D PETG Printing Filament Spools (x4)',
     category: '3D Printing & Materials',
-    amount: 1200.00,
+    amount: 1200,
     date: '2026-11-05'
   },
   {
     id: 'tx_3',
+    type: 'expense',
     payerId: 'm4', // Mohamed
     description: '4-Layer Custom PCB Fabrication & Stencil',
     category: 'PCB & Electronics',
-    amount: 1800.00,
+    amount: 1800,
     date: '2026-11-08'
   },
   {
     id: 'tx_4',
+    type: 'expense',
     payerId: 'm2', // Omar
     description: 'Ultrasonic Range Sensors & IMU 9-DOF',
     category: 'Sensors & Actuators',
-    amount: 600.00,
+    amount: 600,
     date: '2026-11-10'
   }
+];
+
+// Pre-defined Budget Categories with UI Styling metadata
+const BUDGET_CATEGORIES = [
+  { name: 'Hardware & Microcontrollers', icon: '⚡', colorClass: 'bar-hw' },
+  { name: 'PCB & Electronics', icon: '🔌', colorClass: 'bar-pcb' },
+  { name: '3D Printing & Materials', icon: '🖨️', colorClass: 'bar-3d' },
+  { name: 'Sensors & Actuators', icon: '📡', colorClass: 'bar-sensors' },
+  { name: 'Tools & Fasteners', icon: '🔧', colorClass: 'bar-tools' },
+  { name: 'Software & Cloud APIs', icon: '💻', colorClass: 'bar-sw' },
+  { name: 'Documentation & Thesis', icon: '📄', colorClass: 'bar-doc' },
+  { name: 'Logistics & Misc', icon: '📦', colorClass: 'bar-misc' }
 ];
 
 /* ============================================================================
@@ -146,45 +84,34 @@ const DEFAULT_EXPENSES = [
 
 class ProjectState {
   constructor() {
-    this.projectName = 'ENGINEERING GRADUATION PROJECT';
+    this.projectName = 'GRADUATION PROJECT BUDGET';
+    this.budgetTarget = 12000; // Whole integer target in EGP
     this.members = [...DEFAULT_TEAM_MEMBERS];
-    this.stages = [...DEFAULT_PROJECT_STAGES];
     this.expenses = [...DEFAULT_EXPENSES];
-    this.stageFilter = 'all'; // 'all' | 'in-progress' | 'completed'
     this.txSearchTerm = '';
-    this.currentView = 'timeline'; // 'timeline' | 'treasury'
   }
 
-  /**
-   * Loads state from localStorage or initializes with defaults
-   */
   load() {
     try {
       const savedName = localStorage.getItem('nexus_project_name');
+      const savedBudget = localStorage.getItem('nexus_budget_target');
       const savedMembers = localStorage.getItem('nexus_members');
-      const savedStages = localStorage.getItem('nexus_stages');
       const savedExpenses = localStorage.getItem('nexus_expenses');
-      const savedView = localStorage.getItem('nexus_current_view');
 
       if (savedName) this.projectName = savedName;
+      if (savedBudget) this.budgetTarget = Math.round(Number(savedBudget));
       if (savedMembers) this.members = JSON.parse(savedMembers);
-      if (savedStages) this.stages = JSON.parse(savedStages);
       if (savedExpenses) this.expenses = JSON.parse(savedExpenses);
-      if (savedView === 'treasury' || savedView === 'timeline') this.currentView = savedView;
     } catch (e) {
       console.warn('Could not parse localStorage, falling back to defaults:', e);
     }
   }
 
-  /**
-   * Persists state to localStorage
-   * (In Firebase mode, this function triggers cloud sync!)
-   */
   save() {
     try {
       localStorage.setItem('nexus_project_name', this.projectName);
+      localStorage.setItem('nexus_budget_target', this.budgetTarget.toString());
       localStorage.setItem('nexus_members', JSON.stringify(this.members));
-      localStorage.setItem('nexus_stages', JSON.stringify(this.stages));
       localStorage.setItem('nexus_expenses', JSON.stringify(this.expenses));
     } catch (e) {
       console.error('LocalStorage save error:', e);
@@ -195,9 +122,9 @@ class ProjectState {
   }
 
   resetToDefaults() {
-    this.projectName = 'ENGINEERING GRADUATION PROJECT';
+    this.projectName = 'GRADUATION PROJECT BUDGET';
+    this.budgetTarget = 12000;
     this.members = JSON.parse(JSON.stringify(DEFAULT_TEAM_MEMBERS));
-    this.stages = JSON.parse(JSON.stringify(DEFAULT_PROJECT_STAGES));
     this.expenses = JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
     this.save();
   }
@@ -207,19 +134,19 @@ class ProjectState {
 const appState = new ProjectState();
 
 /* ============================================================================
-   3. THE MATHEMATICAL LOGIC: CONTINUOUS ROLLING LEDGER (CRITICAL)
+   3. THE MATHEMATICAL LOGIC: CONTINUOUS ROLLING LEDGER & BUDGET ENGINE
    ============================================================================ */
 
 /**
- * Calculates complete project finances according to specifications:
- * 1. Total Project Cost = Sum of all hardware/project expenses ONLY (not internal peer transfers).
- * 2. Fair Share per Person = Total Project Cost / 6.
+ * Calculates complete project finances with pure whole integers:
+ * 1. Total Project Cost = Sum of hardware/shared purchases ONLY (no peer transfers).
+ * 2. Fair Share per Person = Math.round(Total Project Cost / 6).
  * 3. Member Net Contribution = (Hardware Paid) + (Transfers Sent) - (Transfers Received).
  * 4. Member Current Balance = Net Contribution - Fair Share.
- *    - Example: You owe 500 EGP (balance -500). You pay 50 EGP to Mohamed:
- *      Your balance becomes -450 EGP. Mohamed's credit decreases by 50 EGP.
- *      Total Project Cost and other 4 teammates remain unaffected!
- * 5. Generates minimal bipartite debt settlements.
+ *    - Example: You owe 500 EGP. You pay Mohamed 50 EGP:
+ *      Your debt becomes -450 EGP. Mohamed's credit decreases by 50 EGP.
+ *      Project Total and the other 4 teammates remain unaffected!
+ * 5. Generates an optimal minimal debt settlement schedule.
  *
  * @param {Array} records - Array of expense and transfer objects
  * @param {Array} members - Array of 6 member objects
@@ -228,41 +155,49 @@ const appState = new ProjectState();
 function calculateRollingLedger(records, members) {
   const TEAM_SIZE = 6;
 
-  // Separate project hardware/service purchases from direct peer debt repayments
+  // Separate project hardware purchases from direct peer debt repayments
   const expenses = records.filter(item => item.type !== 'transfer');
   const transfers = records.filter(item => item.type === 'transfer');
 
   // 1. Calculate Total Project Cost (Hardware and shared purchases ONLY)
-  const totalCost = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalCost = Math.round(
+    expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  );
 
-  // 2. Calculate Exact Fair Share per Person (1/6th)
-  const fairShare = totalCost > 0 ? totalCost / TEAM_SIZE : 0;
+  // 2. Calculate Fair Share per Person (1/6th) rounded to whole integer
+  const fairShare = totalCost > 0 ? Math.round(totalCost / TEAM_SIZE) : 0;
 
   // 3. Calculate per-member contributions and net rolling balances
   const memberSummaries = members.map(member => {
     // Hardware expenses paid directly for the project
-    const hardwarePaid = expenses
-      .filter(tx => tx.payerId === member.id)
-      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+    const hardwarePaid = Math.round(
+      expenses
+        .filter(tx => tx.payerId === member.id)
+        .reduce((sum, tx) => sum + Number(tx.amount || 0), 0)
+    );
 
     // Direct peer debt repayments sent out (e.g. sent 50 EGP to Mohamed)
-    const transfersSent = transfers
-      .filter(tr => tr.fromId === member.id)
-      .reduce((sum, tr) => sum + Number(tr.amount || 0), 0);
+    const transfersSent = Math.round(
+      transfers
+        .filter(tr => tr.fromId === member.id)
+        .reduce((sum, tr) => sum + Number(tr.amount || 0), 0)
+    );
 
     // Direct peer debt repayments received from others (e.g. received 50 EGP)
-    const transfersReceived = transfers
-      .filter(tr => tr.toId === member.id)
-      .reduce((sum, tr) => sum + Number(tr.amount || 0), 0);
+    const transfersReceived = Math.round(
+      transfers
+        .filter(tr => tr.toId === member.id)
+        .reduce((sum, tr) => sum + Number(tr.amount || 0), 0)
+    );
 
-    // Net contribution: direct hardware + money sent to reduce debt - money collected from teammates
+    // Net contribution to the team pool
     const netContributed = hardwarePaid + transfersSent - transfersReceived;
 
     // Continuous Rolling Balance: Net Contributed minus Fair Share
     const balance = netContributed - fairShare;
 
     // Contribution percentage relative to total project expenditures
-    const contributionPercent = totalCost > 0 ? (hardwarePaid / totalCost) * 100 : 0;
+    const contributionPercent = totalCost > 0 ? Math.round((hardwarePaid / totalCost) * 100) : 0;
 
     return {
       id: member.id,
@@ -278,9 +213,9 @@ function calculateRollingLedger(records, members) {
       balance: balance,
       contributionPercent: contributionPercent,
       // Status determination
-      isOwed: balance > 0.009,
-      isInDebt: balance < -0.009,
-      isSettled: Math.abs(balance) <= 0.009
+      isOwed: balance > 0,
+      isInDebt: balance < 0,
+      isSettled: balance === 0
     };
   });
 
@@ -290,10 +225,10 @@ function calculateRollingLedger(records, members) {
     topFunder = [...memberSummaries].sort((a, b) => b.totalPaid - a.totalPaid)[0];
   }
 
-  // 4. Mathematical Equilibrium Sanity Check: Sum of all net balances must equal 0
+  // Equilibrium Sanity Check: Sum of all net balances must equal 0
   const netSum = memberSummaries.reduce((sum, m) => sum + m.balance, 0);
 
-  // 5. Generate Minimal Cash Settlement Transactions
+  // Generate Minimal Cash Settlement Transactions
   const settlements = computeOptimalSettlements(memberSummaries);
 
   return {
@@ -308,23 +243,21 @@ function calculateRollingLedger(records, members) {
 
 /**
  * Greedy Bipartite Debt Simplification Algorithm
- * Solves the minimum number of direct transactions to bring all 6 members to 0.00 balance.
+ * Solves the minimum number of direct transactions to bring all 6 members to 0 balance.
  *
  * @param {Array} memberSummaries - Array of member objects with their current net balances
  * @returns {Array} List of required settlement transfers: { from, to, amount }
  */
 function computeOptimalSettlements(memberSummaries) {
-  // Separate into debtors (owe money, balance < 0) and creditors (owed money, balance > 0)
   const debtors = [];
   const creditors = [];
 
   memberSummaries.forEach(m => {
-    // Round to whole integers for pure integer accounting
     const bal = Math.round(m.balance);
     if (bal < 0) {
-      debtors.push({ id: m.id, name: m.name, amount: -bal }); // positive amount they owe
+      debtors.push({ id: m.id, name: m.name, amount: -bal }); // positive amount owed
     } else if (bal > 0) {
-      creditors.push({ id: m.id, name: m.name, amount: bal }); // positive amount owed to them
+      creditors.push({ id: m.id, name: m.name, amount: bal }); // positive amount to receive
     }
   });
 
@@ -368,14 +301,14 @@ function computeOptimalSettlements(memberSummaries) {
 
 /**
  * Formats a numeric value into Egyptian Pounds currency string as an INTEGER
- * (no decimals, rounded to nearest whole pound, e.g. 2500 -> "2,500")
+ * (no decimals, e.g. 2500 -> "2,500")
  */
 function formatEGP(num) {
   return Math.round(Number(num || 0)).toLocaleString('en-US');
 }
 
 /**
- * Generates member initials for their avatar (e.g. "Ahmed Mahran" -> "AM")
+ * Generates member initials for avatar (e.g. "Ahmed Mahran" -> "AM")
  */
 function getInitials(name) {
   if (!name) return '??';
@@ -385,7 +318,7 @@ function getInitials(name) {
 }
 
 /**
- * Escapes HTML to prevent XSS vulnerabilities
+ * Escapes HTML to prevent XSS
  */
 function escapeHTML(str) {
   if (!str) return '';
@@ -398,125 +331,79 @@ function escapeHTML(str) {
 }
 
 /**
- * View Switcher: Toggles between Project Timeline & Financial Treasury views
- */
-function switchView(viewName) {
-  appState.currentView = viewName;
-  try {
-    localStorage.setItem('nexus_current_view', viewName);
-  } catch (e) {}
-
-  const viewTimeline = document.getElementById('viewTimeline');
-  const viewTreasury = document.getElementById('viewTreasury');
-  const tabTimelineBtn = document.getElementById('tabTimelineBtn');
-  const tabTreasuryBtn = document.getElementById('tabTreasuryBtn');
-
-  if (viewName === 'treasury') {
-    if (viewTimeline) {
-      viewTimeline.classList.remove('active-view');
-      viewTimeline.style.display = 'none';
-    }
-    if (viewTreasury) {
-      viewTreasury.style.display = 'flex';
-      void viewTreasury.offsetWidth; // Force reflow for smooth animation
-      viewTreasury.classList.add('active-view');
-    }
-    if (tabTimelineBtn) tabTimelineBtn.classList.remove('active');
-    if (tabTreasuryBtn) tabTreasuryBtn.classList.add('active');
-  } else {
-    if (viewTreasury) {
-      viewTreasury.classList.remove('active-view');
-      viewTreasury.style.display = 'none';
-    }
-    if (viewTimeline) {
-      viewTimeline.style.display = 'flex';
-      void viewTimeline.offsetWidth;
-      viewTimeline.classList.add('active-view');
-    }
-    if (tabTreasuryBtn) tabTreasuryBtn.classList.remove('active');
-    if (tabTimelineBtn) tabTimelineBtn.classList.add('active');
-  }
-}
-
-/**
- * Main Render Pipeline: Updates the entire UI synchronously
+ * Master Render Pipeline
  */
 function renderAll() {
-  renderHeaderAndProgress();
-  renderFinancialKPIs();
-  renderStages();
-  renderBalancesGrid();
-  renderSettlements();
+  const ledger = calculateRollingLedger(appState.expenses, appState.members);
+
+  renderHeaderAndBudget(ledger);
+  renderFinancialKPIs(ledger);
+  renderCategoryBreakdown(ledger);
+  renderBalancesGrid(ledger);
+  renderSettlements(ledger);
   renderTransactionsFeed();
   populatePayerDropdown();
 }
 
 /**
- * Updates Header Project Title & Overall Stage Progress Bar
+ * Top Progress Banner: Budget Utilization & Spending Tracker
  */
-function renderHeaderAndProgress() {
+function renderHeaderAndBudget(ledger) {
   // Project Title
   const titleDisplay = document.getElementById('projectTitleDisplay');
   if (titleDisplay) titleDisplay.textContent = appState.projectName;
 
-  // Project Stage Progress Calculation
-  const totalStages = appState.stages.length;
-  const completedStages = appState.stages.filter(s => s.status === 'completed').length;
-  const inProgressStages = appState.stages.filter(s => s.status === 'in-progress').length;
-
-  const percentage = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+  const totalSpent = ledger.totalCost;
+  const budgetTarget = appState.budgetTarget;
+  const percent = budgetTarget > 0 ? Math.round((totalSpent / budgetTarget) * 100) : 0;
+  const remaining = budgetTarget - totalSpent;
 
   // DOM Elements
-  const percentText = document.getElementById('overallPercentText');
-  const progressBar = document.getElementById('overallProgressBar');
-  const progressCount = document.getElementById('stageProgressCount');
-  const activePhaseName = document.getElementById('activePhaseName');
-  const navTimelineBadge = document.getElementById('navTimelineBadge');
+  const budgetUsageText = document.getElementById('budgetUsageText');
+  const budgetPercentText = document.getElementById('budgetPercentText');
+  const budgetProgressBar = document.getElementById('budgetProgressBar');
+  const budgetRemainingText = document.getElementById('budgetRemainingText');
 
-  if (percentText) percentText.textContent = percentage;
-  if (progressBar) progressBar.style.width = `${percentage}%`;
-  if (progressCount) {
-    progressCount.textContent = `${completedStages} of ${totalStages} Milestones Completed`;
-  }
-  if (navTimelineBadge) {
-    navTimelineBadge.textContent = `${percentage}% Done`;
+  if (budgetUsageText) {
+    budgetUsageText.textContent = `Spent: ${formatEGP(totalSpent)} EGP of ${formatEGP(budgetTarget)} EGP Target`;
   }
 
-  // Active Phase Display
-  if (activePhaseName) {
-    const activeStage = appState.stages.find(s => s.status === 'in-progress');
-    if (activeStage) {
-      activePhaseName.textContent = activeStage.title;
-    } else if (completedStages === totalStages && totalStages > 0) {
-      activePhaseName.textContent = 'All Milestones Complete!';
-    } else {
-      activePhaseName.textContent = 'None currently active';
+  if (budgetPercentText) {
+    budgetPercentText.textContent = percent;
+  }
+
+  if (budgetProgressBar) {
+    budgetProgressBar.style.width = `${Math.min(percent, 100)}%`;
+    budgetProgressBar.classList.remove('budget-warning', 'budget-danger');
+    if (percent > 100) {
+      budgetProgressBar.classList.add('budget-danger');
+    } else if (percent >= 80) {
+      budgetProgressBar.classList.add('budget-warning');
     }
   }
 
-  // Filter Counts
-  const countAll = document.getElementById('countAllStages');
-  const countActive = document.getElementById('countActiveStages');
-  const countDone = document.getElementById('countDoneStages');
-  if (countAll) countAll.textContent = totalStages;
-  if (countActive) countActive.textContent = inProgressStages;
-  if (countDone) countDone.textContent = completedStages;
+  if (budgetRemainingText) {
+    if (remaining >= 0) {
+      budgetRemainingText.textContent = `${formatEGP(remaining)} EGP available`;
+      budgetRemainingText.style.color = 'var(--text-main)';
+    } else {
+      budgetRemainingText.textContent = `Over Budget by ${formatEGP(Math.abs(remaining))} EGP!`;
+      budgetRemainingText.style.color = 'var(--rose-light)';
+    }
+  }
 }
 
 /**
- * Updates the 4 Top KPI Financial Cards
+ * Top KPI Financial Overview Cards
  */
-function renderFinancialKPIs() {
-  const ledger = calculateRollingLedger(appState.expenses, appState.members);
-
+function renderFinancialKPIs(ledger) {
   const kpiTotalCost = document.getElementById('kpiTotalCost');
   const kpiFairShare = document.getElementById('kpiFairShare');
-  const kpiTopFunder = document.getElementById('kpiTopFunder');
-  const kpiTopFunderAmount = document.getElementById('kpiTopFunderAmount');
+  const kpiRemainingBudget = document.getElementById('kpiRemainingBudget');
+  const kpiBudgetTargetSubtext = document.getElementById('kpiBudgetTargetSubtext');
   const kpiExpenseCount = document.getElementById('kpiExpenseCount');
   const kpiSettlementCount = document.getElementById('kpiSettlementCount');
   const ledgerEquilibrium = document.getElementById('ledgerEquilibrium');
-  const navTreasuryBadge = document.getElementById('navTreasuryBadge');
 
   if (kpiTotalCost) {
     kpiTotalCost.innerHTML = `${formatEGP(ledger.totalCost)} <span class="currency">EGP</span>`;
@@ -526,22 +413,21 @@ function renderFinancialKPIs() {
     kpiFairShare.innerHTML = `${formatEGP(ledger.fairShare)} <span class="currency">EGP</span>`;
   }
 
-  if (navTreasuryBadge) {
-    navTreasuryBadge.textContent = `${formatEGP(ledger.totalCost)} EGP`;
+  const remaining = appState.budgetTarget - ledger.totalCost;
+  if (kpiRemainingBudget) {
+    kpiRemainingBudget.innerHTML = `${formatEGP(remaining)} <span class="currency">EGP</span>`;
+    kpiRemainingBudget.style.color = remaining >= 0 ? 'var(--emerald-light)' : 'var(--rose-light)';
+  }
+
+  if (kpiBudgetTargetSubtext) {
+    const rawExpenses = appState.expenses.filter(e => e.type !== 'transfer');
+    kpiBudgetTargetSubtext.textContent = `Target: ${formatEGP(appState.budgetTarget)} EGP`;
   }
 
   if (kpiExpenseCount) {
-    kpiExpenseCount.textContent = `${appState.expenses.length} transactions recorded`;
-  }
-
-  if (kpiTopFunder && kpiTopFunderAmount) {
-    if (ledger.topFunder && ledger.topFunder.totalPaid > 0) {
-      kpiTopFunder.textContent = ledger.topFunder.name.split(' ')[0];
-      kpiTopFunderAmount.textContent = `${formatEGP(ledger.topFunder.totalPaid)} EGP contributed`;
-    } else {
-      kpiTopFunder.textContent = 'None yet';
-      kpiTopFunderAmount.textContent = '0 EGP contributed';
-    }
+    const rawExpenses = appState.expenses.filter(e => e.type !== 'transfer');
+    const transfers = appState.expenses.filter(e => e.type === 'transfer');
+    kpiExpenseCount.textContent = `${rawExpenses.length} purchases • ${transfers.length} peer payments`;
   }
 
   if (kpiSettlementCount) {
@@ -559,94 +445,53 @@ function renderFinancialKPIs() {
 }
 
 /**
- * SECTION A: Renders Project Stage Tracker Checklist
+ * Category Spending Breakdown Widget
  */
-function renderStages() {
-  const container = document.getElementById('stagesListContainer');
+function renderCategoryBreakdown(ledger) {
+  const container = document.getElementById('categoryBreakdownList');
   if (!container) return;
 
-  // Filter stages based on current active tab
-  let filteredStages = appState.stages;
-  if (appState.stageFilter === 'in-progress') {
-    filteredStages = appState.stages.filter(s => s.status === 'in-progress');
-  } else if (appState.stageFilter === 'completed') {
-    filteredStages = appState.stages.filter(s => s.status === 'completed');
-  }
+  const rawExpenses = appState.expenses.filter(e => e.type !== 'transfer');
+  const totalCost = ledger.totalCost;
 
-  if (filteredStages.length === 0) {
-    container.innerHTML = `
-      <div class="empty-feed-placeholder">
-        No stages match the "${appState.stageFilter}" filter.
-      </div>
-    `;
-    return;
-  }
+  // Aggregate spending by category
+  const categoryTotals = {};
+  rawExpenses.forEach(tx => {
+    const cat = tx.category || 'Logistics & Misc';
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(tx.amount || 0);
+  });
 
-  container.innerHTML = filteredStages.map((stage, idx) => {
-    const isCompleted = stage.status === 'completed';
-    const isInProgress = stage.status === 'in-progress';
-    const statusClass = isCompleted ? 'status-completed' : (isInProgress ? 'status-in-progress' : 'status-pending');
+  const categoriesWithSpending = BUDGET_CATEGORIES.map(cat => {
+    const spent = Math.round(categoryTotals[cat.name] || 0);
+    const percent = totalCost > 0 ? Math.round((spent / totalCost) * 100) : 0;
+    return { ...cat, spent, percent };
+  }).sort((a, b) => b.spent - a.spent);
 
-    return `
-      <div class="stage-card ${statusClass}" data-stage-id="${stage.id}">
-        <div class="stage-card-top">
-          <div>
-            <span class="stage-number">STAGE #${stage.order || (idx + 1)}</span>
-            <h3 class="stage-title">${escapeHTML(stage.title)}</h3>
-          </div>
-          <button class="icon-btn-ghost delete-stage-btn" data-stage-id="${stage.id}" title="Delete Stage">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </button>
-        </div>
-
-        <p class="stage-desc">${escapeHTML(stage.desc || 'No specific deliverables noted.')}</p>
-
-        <div class="stage-card-bottom">
-          <div class="stage-date-badge">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>${stage.targetDate ? `Deadline: ${stage.targetDate}` : 'No date set'}</span>
-          </div>
-
-          <div class="stage-action-btns">
-            <!-- Stage Status Toggle Buttons -->
-            <button class="stage-toggle-btn ${isInProgress ? 'btn-is-in-progress' : ''}" 
-                    data-action="set-in-progress" 
-                    data-stage-id="${stage.id}" 
-                    title="Mark In Progress">
-              <span>● In Progress</span>
-            </button>
-            <button class="stage-toggle-btn ${isCompleted ? 'btn-is-completed' : ''}" 
-                    data-action="toggle-complete" 
-                    data-stage-id="${stage.id}" 
-                    title="Toggle Completed">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <span>${isCompleted ? 'Completed' : 'Complete'}</span>
-            </button>
-          </div>
+  container.innerHTML = categoriesWithSpending.map(cat => `
+    <div class="category-item">
+      <div class="category-item-header">
+        <span class="category-name">
+          <span>${cat.icon}</span>
+          <span>${escapeHTML(cat.name)}</span>
+        </span>
+        <div class="category-meta">
+          <span class="category-amount font-mono">${formatEGP(cat.spent)} EGP</span>
+          <span class="category-percent font-mono">(${cat.percent}%)</span>
         </div>
       </div>
-    `;
-  }).join('');
+      <div class="category-bar-track">
+        <div class="category-bar-fill ${cat.colorClass}" style="width: ${cat.percent}%;"></div>
+      </div>
+    </div>
+  `).join('');
 }
 
 /**
  * SECTION B: Renders The 6 Member Rolling Balances Cards
  */
-function renderBalancesGrid() {
+function renderBalancesGrid(ledger) {
   const container = document.getElementById('balancesGrid');
   if (!container) return;
-
-  const ledger = calculateRollingLedger(appState.expenses, appState.members);
 
   container.innerHTML = ledger.memberSummaries.map(member => {
     let cardStatusClass = 'is-settled';
@@ -660,7 +505,6 @@ function renderBalancesGrid() {
     } else if (member.isInDebt) {
       cardStatusClass = 'is-in-debt';
       badgeHtml = '<span class="balance-status-badge badge badge-rose">- Owes Team</span>';
-      // Display absolute value with explicit minus for clarity
       balanceFormatted = `- ${formatEGP(Math.abs(member.balance))} EGP`;
     }
 
@@ -678,7 +522,7 @@ function renderBalancesGrid() {
 
         <div class="member-stats-row">
           <div class="stat-item">
-            <span class="stat-label">Total Paid</span>
+            <span class="stat-label">Hardware Paid</span>
             <span class="stat-val font-mono">${formatEGP(member.totalPaid)}</span>
           </div>
           <div class="stat-item">
@@ -693,8 +537,8 @@ function renderBalancesGrid() {
         </div>
 
         <!-- Relative Contribution Bar -->
-        <div class="contribution-bar-wrap" title="${Math.round(member.contributionPercent)}% of total expenses">
-          <div class="contribution-bar-fill" style="width: ${Math.round(member.contributionPercent)}%; background-color: ${member.color};"></div>
+        <div class="contribution-bar-wrap" title="${member.contributionPercent}% of total expenses">
+          <div class="contribution-bar-fill" style="width: ${member.contributionPercent}%; background-color: ${member.color};"></div>
         </div>
       </div>
     `;
@@ -704,22 +548,20 @@ function renderBalancesGrid() {
 /**
  * SECTION B: Renders Optimal Settlement Recommendations
  */
-function renderSettlements() {
+function renderSettlements(ledger) {
   const container = document.getElementById('settlementsContainer');
   if (!container) return;
-
-  const ledger = calculateRollingLedger(appState.expenses, appState.members);
 
   if (ledger.settlements.length === 0) {
     container.innerHTML = `
       <div class="all-settled-notice">
-        ✓ All 6 team members are in exact financial balance! No settlements required.
+        ✓ All 6 team members are in exact financial equilibrium! No settlements required.
       </div>
     `;
     return;
   }
 
-  container.innerHTML = ledger.settlements.map((st, idx) => `
+  container.innerHTML = ledger.settlements.map((st) => `
     <div class="settlement-card">
       <div class="settlement-flow">
         <span class="settlement-debtor">${escapeHTML(st.fromName.split(' ')[0])}</span>
@@ -936,24 +778,7 @@ function showToast(message, type = 'info') {
  * Initializes all event listeners on page load
  */
 function attachEventListeners() {
-  // 0a. Top Navigation View Switcher (Project Timeline vs Financial Treasury)
-  const tabTimelineBtn = document.getElementById('tabTimelineBtn');
-  const tabTreasuryBtn = document.getElementById('tabTreasuryBtn');
-
-  if (tabTimelineBtn) {
-    tabTimelineBtn.addEventListener('click', () => switchView('timeline'));
-  }
-  if (tabTreasuryBtn) {
-    tabTreasuryBtn.addEventListener('click', () => switchView('treasury'));
-  }
-
-  // Optional shortcut from Timeline banner chip to Treasury
-  const chipJumpTreasury = document.getElementById('chipJumpTreasury');
-  if (chipJumpTreasury) {
-    chipJumpTreasury.addEventListener('click', () => switchView('treasury'));
-  }
-
-  // 0b. Transaction Mode Tabs Toggle (Project Purchase vs Direct Debt Payment)
+  // 0. Transaction Mode Tabs Toggle (Project Purchase vs Direct Debt Payment)
   const modeExpenseBtn = document.getElementById('modeExpenseBtn');
   const modeTransferBtn = document.getElementById('modeTransferBtn');
   const expenseForm = document.getElementById('expenseForm');
@@ -1001,7 +826,7 @@ function attachEventListeners() {
       }
 
       if (isNaN(amount) || amount <= 0) {
-        showToast('Please enter a valid integer amount greater than 0 EGP.', 'error');
+        showToast('Please enter a valid whole number greater than 0 EGP.', 'error');
         return;
       }
 
@@ -1015,15 +840,12 @@ function attachEventListeners() {
         date
       };
 
-      // Add to state and save
       appState.expenses.push(newExpense);
       appState.save();
 
-      // Reset form
       expenseForm.reset();
       document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
 
-      // Re-render
       renderAll();
 
       const payerObj = appState.members.find(m => m.id === payerId);
@@ -1053,7 +875,7 @@ function attachEventListeners() {
       }
 
       if (isNaN(amount) || amount <= 0) {
-        showToast('Please enter a valid integer payment amount greater than 0 EGP.', 'error');
+        showToast('Please enter a valid whole payment amount greater than 0 EGP.', 'error');
         return;
       }
 
@@ -1067,15 +889,12 @@ function attachEventListeners() {
         date
       };
 
-      // Add to state and save
       appState.expenses.push(newTransfer);
       appState.save();
 
-      // Reset form
       transferForm.reset();
       document.getElementById('transferDate').value = new Date().toISOString().split('T')[0];
 
-      // Re-render
       renderAll();
 
       const fromObj = appState.members.find(m => m.id === fromId);
@@ -1097,7 +916,7 @@ function attachEventListeners() {
     });
   });
 
-  // 2b. Direct Settlement Card "⚡ Settle / Pay" Button Delegation
+  // 2b. Direct Settlement Card "⚡ Pay" Button Delegation
   const settlementsContainer = document.getElementById('settlementsContainer');
   if (settlementsContainer) {
     settlementsContainer.addEventListener('click', (e) => {
@@ -1107,9 +926,6 @@ function attachEventListeners() {
       const fromId = payBtn.getAttribute('data-from');
       const toId = payBtn.getAttribute('data-to');
       const amount = Math.round(parseFloat(payBtn.getAttribute('data-amount') || '0'));
-
-      // Switch to Treasury view first if coming from any other view
-      switchView('treasury');
 
       // Switch to direct transfer mode
       setActivityMode('transfer');
@@ -1148,11 +964,12 @@ function attachEventListeners() {
       const txId = deleteBtn.getAttribute('data-tx-id');
       const targetTx = appState.expenses.find(t => t.id === txId);
 
-      if (confirm(`Are you sure you want to delete "${targetTx ? targetTx.description : 'this expense'}"? All 6 rolling balances will recalculate.`)) {
+      const desc = targetTx.type === 'transfer' ? 'this payment transfer' : `"${targetTx.description}"`;
+      if (confirm(`Are you sure you want to delete ${desc}? All 6 rolling balances will recalculate.`)) {
         appState.expenses = appState.expenses.filter(t => t.id !== txId);
         appState.save();
         renderAll();
-        showToast('Expense removed & ledger balances recalculated.', 'info');
+        showToast('Record removed & ledger balances recalculated.', 'info');
       }
     });
   }
@@ -1166,99 +983,34 @@ function attachEventListeners() {
     });
   }
 
-  // 5. Stage Tracker Actions Delegation (Toggle status & Delete stage)
-  const stagesListContainer = document.getElementById('stagesListContainer');
-  if (stagesListContainer) {
-    stagesListContainer.addEventListener('click', (e) => {
-      // Toggle / Set status button
-      const actionBtn = e.target.closest('.stage-toggle-btn');
-      if (actionBtn) {
-        const stageId = actionBtn.getAttribute('data-stage-id');
-        const action = actionBtn.getAttribute('data-action');
-        const stage = appState.stages.find(s => s.id === stageId);
+  // 5. Budget Modal Setup
+  const openBudgetBtn = document.getElementById('openBudgetModalBtn');
+  const budgetModal = document.getElementById('budgetModal');
+  const editBudgetForm = document.getElementById('editBudgetForm');
+  const budgetTargetInput = document.getElementById('budgetTargetInput');
 
-        if (stage) {
-          if (action === 'toggle-complete') {
-            stage.status = stage.status === 'completed' ? 'in-progress' : 'completed';
-            stage.completedAt = stage.status === 'completed' ? new Date().toISOString().split('T')[0] : null;
-          } else if (action === 'set-in-progress') {
-            stage.status = stage.status === 'in-progress' ? 'pending' : 'in-progress';
-          }
-          appState.save();
-          renderHeaderAndProgress();
-          renderStages();
-          showToast(`Stage "${stage.title.substring(0, 26)}..." status updated.`, 'info');
-        }
-        return;
-      }
-
-      // Delete stage button
-      const deleteStageBtn = e.target.closest('.delete-stage-btn');
-      if (deleteStageBtn) {
-        const stageId = deleteStageBtn.getAttribute('data-stage-id');
-        if (confirm('Delete this milestone stage from your graduation project timeline?')) {
-          appState.stages = appState.stages.filter(s => s.id !== stageId);
-          appState.save();
-          renderHeaderAndProgress();
-          renderStages();
-          showToast('Stage deleted.', 'info');
-        }
-      }
+  if (openBudgetBtn && budgetModal) {
+    openBudgetBtn.addEventListener('click', () => {
+      if (budgetTargetInput) budgetTargetInput.value = appState.budgetTarget;
+      budgetModal.classList.add('open');
     });
   }
 
-  // 6. Stage Filter Tabs
-  document.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      appState.stageFilter = tab.getAttribute('data-filter');
-      renderStages();
-    });
-  });
-
-  // 7. Add Custom Stage Modal
-  const openAddStageBtn = document.getElementById('openAddStageModalBtn');
-  const addStageModal = document.getElementById('addStageModal');
-  const addStageForm = document.getElementById('addStageForm');
-
-  if (openAddStageBtn && addStageModal) {
-    openAddStageBtn.addEventListener('click', () => {
-      addStageModal.classList.add('open');
-    });
-  }
-
-  if (addStageForm) {
-    addStageForm.addEventListener('submit', (e) => {
+  if (editBudgetForm) {
+    editBudgetForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const title = document.getElementById('newStageTitle').value.trim();
-      const desc = document.getElementById('newStageDesc').value.trim();
-      const deadline = document.getElementById('newStageDeadline').value;
-
-      if (!title) return;
-
-      const newStage = {
-        id: 'stage_' + Date.now(),
-        order: appState.stages.length + 1,
-        title,
-        desc,
-        status: 'pending',
-        targetDate: deadline || null,
-        completedAt: null
-      };
-
-      appState.stages.push(newStage);
-      appState.save();
-
-      addStageForm.reset();
-      addStageModal.classList.remove('open');
-      renderHeaderAndProgress();
-      renderStages();
-      showToast(`Added milestone: "${title}"`, 'success');
+      const val = Math.round(parseFloat(budgetTargetInput.value));
+      if (val > 0) {
+        appState.budgetTarget = val;
+        appState.save();
+        budgetModal.classList.remove('open');
+        renderAll();
+        showToast(`Budget target updated to ${formatEGP(val)} EGP.`, 'success');
+      }
     });
   }
 
-  // 8. Edit Project Title Button
+  // 6. Edit Project Title Button
   const editProjectNameBtn = document.getElementById('editProjectNameBtn');
   if (editProjectNameBtn) {
     editProjectNameBtn.addEventListener('click', () => {
@@ -1267,13 +1019,13 @@ function attachEventListeners() {
       if (updated && updated.trim() && updated.trim() !== current) {
         appState.projectName = updated.trim();
         appState.save();
-        renderHeaderAndProgress();
+        renderAll();
         showToast('Project title updated.', 'success');
       }
     });
   }
 
-  // 9. Customize Team Members Modal
+  // 7. Customize Team Members Modal
   const manageTeamBtn = document.getElementById('manageTeamBtn');
   const teamModal = document.getElementById('teamModal');
   const editTeamForm = document.getElementById('editTeamForm');
@@ -1310,7 +1062,7 @@ function attachEventListeners() {
     });
   }
 
-  // 10. Close Modal Buttons & Backdrop Click
+  // 8. Close Modal Buttons & Backdrop Click
   document.querySelectorAll('.close-modal-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const modalId = btn.getAttribute('data-close');
@@ -1325,11 +1077,11 @@ function attachEventListeners() {
     });
   });
 
-  // 11. Reset to Defaults Demo Button
+  // 9. Reset to Defaults Demo Button
   const resetBtn = document.getElementById('resetDataBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      if (confirm('Reset all stages, members, and expenses back to initial demo data?')) {
+      if (confirm('Reset budget, members, and transactions back to initial demo data?')) {
         appState.resetToDefaults();
         renderAll();
         showToast('App reset to clean demo state.', 'info');
@@ -1337,15 +1089,15 @@ function attachEventListeners() {
     });
   }
 
-  // 12. Export JSON Backup Button
+  // 10. Export JSON Backup Button
   const exportBtn = document.getElementById('exportDataBtn');
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
       const dataBackup = {
         exportedAt: new Date().toISOString(),
         projectName: appState.projectName,
+        budgetTarget: appState.budgetTarget,
         members: appState.members,
-        stages: appState.stages,
         expenses: appState.expenses,
         financialSummary: calculateRollingLedger(appState.expenses, appState.members)
       };
@@ -1353,7 +1105,7 @@ function attachEventListeners() {
       const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataBackup, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", jsonStr);
-      downloadAnchor.setAttribute("download", `graduation_project_ledger_${new Date().toISOString().split('T')[0]}.json`);
+      downloadAnchor.setAttribute("download", `graduation_project_budget_${new Date().toISOString().split('T')[0]}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1365,104 +1117,26 @@ function attachEventListeners() {
 
 /* ============================================================================
    6. FIREBASE CLOUD DATABASE HOOKS & PLACEHOLDER FUNCTIONS
-   ============================================================================
-   To integrate your Firebase Realtime Database or Cloud Firestore,
-   follow the instructions below. The application is completely structured
-   to switch from LocalStorage to real-time Cloud sync without altering UI code.
    ============================================================================ */
 
-/**
- * Hook triggered whenever state modifications occur.
- * If Firebase is initialized, push updates to your cloud collection.
- */
 function firebaseSyncHook(state) {
-  // Placeholder: When you connect Firebase, uncomment below:
   /*
   if (window.firebaseDB) {
     saveExpensesToFirebase(state.expenses);
-    saveStagesToFirebase(state.stages);
   }
   */
 }
 
-/**
- * PLACEHOLDER 1: Initialize Firebase Configuration
- * Copy this into your script once you register your project on firebase.google.com
- *
- * Example using Firebase v9/v10 Modular SDK:
- * 
- * import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
- * import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
- *
- * const firebaseConfig = {
- *   apiKey: "YOUR_API_KEY",
- *   authDomain: "YOUR_PROJECT.firebaseapp.com",
- *   projectId: "YOUR_PROJECT_ID",
- *   storageBucket: "YOUR_PROJECT.appspot.com",
- *   messagingSenderId: "SENDER_ID",
- *   appId: "APP_ID"
- * };
- *
- * const app = initializeApp(firebaseConfig);
- * const db = getFirestore(app);
- * window.firebaseDB = db;
- */
 function initFirebaseApp() {
   console.log('[Firebase Hook] Placeholder: Ready for Firebase credentials injection.');
 }
 
-/**
- * PLACEHOLDER 2: Realtime Listener for Expenses
- * Subscribes to live purchases made by any teammate on their phone or laptop.
- */
 function listenToFirebaseExpenses(onDataChanged) {
-  /*
-  import { collection, onSnapshot } from "firebase/firestore";
-  onSnapshot(collection(window.firebaseDB, "expenses"), (snapshot) => {
-    const cloudExpenses = [];
-    snapshot.forEach((doc) => cloudExpenses.push({ id: doc.id, ...doc.data() }));
-    onDataChanged(cloudExpenses);
-  });
-  */
   console.log('[Firebase Hook] Placeholder: Ready for onSnapshot(expenses).');
 }
 
-/**
- * PLACEHOLDER 3: Realtime Listener for Stages
- * Subscribes to live completion status updates made by team leads.
- */
-function listenToFirebaseStages(onDataChanged) {
-  /*
-  import { collection, onSnapshot } from "firebase/firestore";
-  onSnapshot(collection(window.firebaseDB, "stages"), (snapshot) => {
-    const cloudStages = [];
-    snapshot.forEach((doc) => cloudStages.push({ id: doc.id, ...doc.data() }));
-    onDataChanged(cloudStages);
-  });
-  */
-  console.log('[Firebase Hook] Placeholder: Ready for onSnapshot(stages).');
-}
-
-/**
- * PLACEHOLDER 4: Push New Expense to Firebase
- */
 function saveExpenseToFirebase(expenseObject) {
-  /*
-  import { doc, setDoc } from "firebase/firestore";
-  return setDoc(doc(window.firebaseDB, "expenses", expenseObject.id), expenseObject);
-  */
   console.log('[Firebase Hook] Placeholder: Saving expense to Cloud Firestore:', expenseObject);
-}
-
-/**
- * PLACEHOLDER 5: Update Stage Status in Firebase
- */
-function updateStageInFirebase(stageId, updatedFields) {
-  /*
-  import { doc, updateDoc } from "firebase/firestore";
-  return updateDoc(doc(window.firebaseDB, "stages", stageId), updatedFields);
-  */
-  console.log('[Firebase Hook] Placeholder: Updating stage in Cloud Firestore:', stageId, updatedFields);
 }
 
 /* ============================================================================
@@ -1470,7 +1144,7 @@ function updateStageInFirebase(stageId, updatedFields) {
    ============================================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Set default date input to today
+  // Set default dates
   const dateInput = document.getElementById('expenseDate');
   if (dateInput) {
     dateInput.value = new Date().toISOString().split('T')[0];
@@ -1488,9 +1162,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial Full Render
   renderAll();
-
-  // Restore active view (Project Timeline vs Financial Treasury)
-  switchView(appState.currentView || 'timeline');
 
   // Initialize Firebase Hook placeholder
   initFirebaseApp();
