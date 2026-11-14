@@ -316,6 +316,19 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-emerald {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.btn-emerald:hover {
+  background: linear-gradient(135deg, #047857, #059669);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
 .btn-glow {
   position: relative;
   overflow: hidden;
@@ -789,7 +802,77 @@ body {
   color: #fbbf24;
 }
 
-/* --- Section B: Expense Form UI --- */
+/* --- Section B: Activity Mode Tabs & Form UI --- */
+.tx-mode-toggle-bar {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-glass);
+  margin-bottom: 0.5rem;
+}
+
+.tx-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.95rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tx-mode-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tx-mode-btn.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.tx-mode-btn#modeTransferBtn.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--emerald-light);
+}
+
+.helper-callout {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.callout-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.callout-text em {
+  color: var(--neon-cyan);
+  font-style: normal;
+  font-weight: 600;
+}
+
 .expense-form {
   display: flex;
   flex-direction: column;
@@ -1151,6 +1234,37 @@ body {
   padding: 0.2rem 0.6rem;
   border-radius: 6px;
   white-space: nowrap;
+}
+
+.settlement-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-pay-settlement {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--emerald-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.btn-pay-settlement:hover {
+  background: var(--emerald);
+  color: #fff;
+  border-color: var(--emerald);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--emerald-glow);
 }
 
 .all-settled-notice {

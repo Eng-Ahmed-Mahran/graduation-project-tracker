@@ -209,21 +209,27 @@ const appState = new ProjectState();
 
 /**
  * Calculates complete project finances according to specifications:
- * 1. Total Project Cost = Sum of all expenses.
+ * 1. Total Project Cost = Sum of all hardware/project expenses ONLY (not internal peer transfers).
  * 2. Fair Share per Person = Total Project Cost / 6.
- * 3. Member Current Balance = Member Total Amount Paid - Fair Share.
- *    - Positive (> 0): Team owes this member money (+ green).
- *    - Negative (< 0): Member owes money to the team (- red).
- * 4. Generates an optimal minimal debt settlement schedule.
+ * 3. Member Net Contribution = (Hardware Paid) + (Transfers Sent) - (Transfers Received).
+ * 4. Member Current Balance = Net Contribution - Fair Share.
+ *    - Example: You owe 500 EGP (balance -500). You pay 50 EGP to Mohamed:
+ *      Your balance becomes -450 EGP. Mohamed's credit decreases by 50 EGP.
+ *      Total Project Cost and other 4 teammates remain unaffected!
+ * 5. Generates minimal bipartite debt settlements.
  *
- * @param {Array} expenses - Array of expense objects
+ * @param {Array} records - Array of expense and transfer objects
  * @param {Array} members - Array of 6 member objects
  * @returns {Object} Complete financial ledger summary
  */
-function calculateRollingLedger(expenses, members) {
+function calculateRollingLedger(records, members) {
   const TEAM_SIZE = 6;
 
-  // 1. Calculate Total Project Cost
+  // Separate project hardware/service purchases from direct peer debt repayments
+  const expenses = records.filter(item => item.type !== 'transfer');
+  const transfers = records.filter(item => item.type === 'transfer');
+
+  // 1. Calculate Total Project Cost (Hardware and shared purchases ONLY)
   const totalCost = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   // 2. Calculate Exact Fair Share per Person (1/6th)
@@ -231,25 +237,40 @@ function calculateRollingLedger(expenses, members) {
 
   // 3. Calculate per-member contributions and net rolling balances
   const memberSummaries = members.map(member => {
-    // Sum all expenses paid by this specific member
-    const totalPaid = expenses
+    // Hardware expenses paid directly for the project
+    const hardwarePaid = expenses
       .filter(tx => tx.payerId === member.id)
       .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
 
-    // Continuous Rolling Balance: Total Paid minus Fair Share
-    // Example: Paid 2000, Fair Share 416.66 => +1583.34
-    // Example: Paid 0, Fair Share 416.66 => -416.66
-    const balance = totalPaid - fairShare;
+    // Direct peer debt repayments sent out (e.g. sent 50 EGP to Mohamed)
+    const transfersSent = transfers
+      .filter(tr => tr.fromId === member.id)
+      .reduce((sum, tr) => sum + Number(tr.amount || 0), 0);
+
+    // Direct peer debt repayments received from others (e.g. received 50 EGP)
+    const transfersReceived = transfers
+      .filter(tr => tr.toId === member.id)
+      .reduce((sum, tr) => sum + Number(tr.amount || 0), 0);
+
+    // Net contribution: direct hardware + money sent to reduce debt - money collected from teammates
+    const netContributed = hardwarePaid + transfersSent - transfersReceived;
+
+    // Continuous Rolling Balance: Net Contributed minus Fair Share
+    const balance = netContributed - fairShare;
 
     // Contribution percentage relative to total project expenditures
-    const contributionPercent = totalCost > 0 ? (totalPaid / totalCost) * 100 : 0;
+    const contributionPercent = totalCost > 0 ? (hardwarePaid / totalCost) * 100 : 0;
 
     return {
       id: member.id,
       name: member.name,
       role: member.role,
       color: member.color,
-      totalPaid: totalPaid,
+      totalPaid: hardwarePaid,
+      hardwarePaid: hardwarePaid,
+      transfersSent: transfersSent,
+      transfersReceived: transfersReceived,
+      netContributed: netContributed,
       fairShare: fairShare,
       balance: balance,
       contributionPercent: contributionPercent,
@@ -660,8 +681,17 @@ function renderSettlements() {
         </span>
         <span class="settlement-creditor">${escapeHTML(st.toName.split(' ')[0])}</span>
       </div>
-      <div class="settlement-amount font-mono">
-        ${formatEGP(st.amount)} EGP
+      <div class="settlement-right">
+        <div class="settlement-amount font-mono">
+          ${formatEGP(st.amount)} EGP
+        </div>
+        <button class="btn-pay-settlement" 
+                data-from="${st.fromId}" 
+                data-to="${st.toId}" 
+                data-amount="${st.amount}" 
+                title="Log full or partial payment to ${escapeHTML(st.toName.split(' ')[0])}">
+          ⚡ Settle / Pay
+        </button>
       </div>
     </div>
   `).join('');
@@ -680,13 +710,22 @@ function renderTransactionsFeed() {
   if (appState.txSearchTerm.trim()) {
     const term = appState.txSearchTerm.toLowerCase();
     list = list.filter(tx => {
-      const payer = appState.members.find(m => m.id === tx.payerId);
-      const payerName = payer ? payer.name.toLowerCase() : '';
-      return (
-        tx.description.toLowerCase().includes(term) ||
-        tx.category.toLowerCase().includes(term) ||
-        payerName.includes(term)
-      );
+      if (tx.type === 'transfer') {
+        const from = appState.members.find(m => m.id === tx.fromId);
+        const to = appState.members.find(m => m.id === tx.toId);
+        const fromName = from ? from.name.toLowerCase() : '';
+        const toName = to ? to.name.toLowerCase() : '';
+        const note = (tx.note || '').toLowerCase();
+        return fromName.includes(term) || toName.includes(term) || note.includes(term);
+      } else {
+        const payer = appState.members.find(m => m.id === tx.payerId);
+        const payerName = payer ? payer.name.toLowerCase() : '';
+        return (
+          (tx.description || '').toLowerCase().includes(term) ||
+          (tx.category || '').toLowerCase().includes(term) ||
+          payerName.includes(term)
+        );
+      }
     });
   }
 
@@ -696,13 +735,58 @@ function renderTransactionsFeed() {
   if (list.length === 0) {
     container.innerHTML = `
       <div class="empty-feed-placeholder">
-        ${appState.txSearchTerm ? 'No transactions match your search.' : 'No expenses logged yet. Use the form above to add a purchase.'}
+        ${appState.txSearchTerm ? 'No activity matches your search.' : 'No purchases or payments logged yet.'}
       </div>
     `;
     return;
   }
 
   container.innerHTML = list.map(tx => {
+    // If it's a direct peer-to-peer debt reimbursement
+    if (tx.type === 'transfer') {
+      const sender = appState.members.find(m => m.id === tx.fromId) || {
+        name: 'Teammate',
+        color: '#64748b'
+      };
+      const receiver = appState.members.find(m => m.id === tx.toId) || {
+        name: 'Teammate',
+        color: '#10b981'
+      };
+
+      return `
+        <div class="transaction-card tx-transfer-card" data-tx-id="${tx.id}">
+          <div class="tx-left">
+            <div class="tx-avatar" style="background-color: ${sender.color};">
+              ${getInitials(sender.name)}
+            </div>
+            <div class="tx-details">
+              <span class="tx-title">
+                <strong>${escapeHTML(sender.name.split(' ')[0])}</strong> paid <strong>${escapeHTML(receiver.name.split(' ')[0])}</strong> directly
+              </span>
+              <div class="tx-meta">
+                <span class="badge badge-emerald" style="font-size:0.6rem; padding: 0.15rem 0.4rem;">💸 Direct Reimbursement</span>
+                <span>&bull;</span>
+                <span>${escapeHTML(tx.note || 'Direct payment')}</span>
+                <span>&bull;</span>
+                <span>${tx.date || 'Recent'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tx-right">
+            <span class="tx-amount text-emerald">+ ${formatEGP(tx.amount)} EGP</span>
+            <button class="icon-btn-ghost delete-tx-btn" data-tx-id="${tx.id}" title="Delete Transfer Record">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Default: Hardware / Shared Project Expense
     const payer = appState.members.find(m => m.id === tx.payerId) || {
       name: 'Unknown Member',
       color: '#64748b'
@@ -741,22 +825,36 @@ function renderTransactionsFeed() {
 }
 
 /**
- * Populates the "Who Paid?" select dropdown with all 6 members
+ * Populates all select dropdowns with the 6 members
  */
 function populatePayerDropdown() {
-  const select = document.getElementById('payerSelect');
-  if (!select) return;
+  const payerSelect = document.getElementById('payerSelect');
+  const transferFromSelect = document.getElementById('transferFromSelect');
+  const transferToSelect = document.getElementById('transferToSelect');
 
-  const currentVal = select.value;
+  const optionsHtml = appState.members.map(m => `
+    <option value="${m.id}">
+      ${escapeHTML(m.name)} (${escapeHTML(m.role)})
+    </option>
+  `).join('');
 
-  select.innerHTML = `
-    <option value="" disabled ${!currentVal ? 'selected' : ''}>Select Team Member</option>
-    ${appState.members.map(m => `
-      <option value="${m.id}" ${currentVal === m.id ? 'selected' : ''}>
-        ${escapeHTML(m.name)} (${escapeHTML(m.role)})
-      </option>
-    `).join('')}
-  `;
+  if (payerSelect) {
+    const curr = payerSelect.value;
+    payerSelect.innerHTML = `<option value="" disabled ${!curr ? 'selected' : ''}>Select Team Member</option>` + optionsHtml;
+    if (curr) payerSelect.value = curr;
+  }
+
+  if (transferFromSelect) {
+    const curr = transferFromSelect.value;
+    transferFromSelect.innerHTML = `<option value="" disabled ${!curr ? 'selected' : ''}>Select Sender (Debtor)</option>` + optionsHtml;
+    if (curr) transferFromSelect.value = curr;
+  }
+
+  if (transferToSelect) {
+    const curr = transferToSelect.value;
+    transferToSelect.innerHTML = `<option value="" disabled ${!curr ? 'selected' : ''}>Select Recipient (Creditor)</option>` + optionsHtml;
+    if (curr) transferToSelect.value = curr;
+  }
 }
 
 /* ============================================================================
@@ -788,8 +886,38 @@ function showToast(message, type = 'info') {
  * Initializes all event listeners on page load
  */
 function attachEventListeners() {
-  // 1. Submit New Expense
+  // 0. Transaction Mode Tabs Toggle (Project Purchase vs Direct Debt Payment)
+  const modeExpenseBtn = document.getElementById('modeExpenseBtn');
+  const modeTransferBtn = document.getElementById('modeTransferBtn');
   const expenseForm = document.getElementById('expenseForm');
+  const transferForm = document.getElementById('transferForm');
+  const ledgerFormTitle = document.getElementById('ledgerFormTitle');
+  const ledgerFormSubtitle = document.getElementById('ledgerFormSubtitle');
+
+  function setActivityMode(mode) {
+    if (mode === 'transfer') {
+      if (modeTransferBtn) modeTransferBtn.classList.add('active');
+      if (modeExpenseBtn) modeExpenseBtn.classList.remove('active');
+      if (expenseForm) expenseForm.style.display = 'none';
+      if (transferForm) transferForm.style.display = 'flex';
+      if (ledgerFormTitle) ledgerFormTitle.textContent = 'Direct Member Reimbursement';
+      if (ledgerFormSubtitle) ledgerFormSubtitle.textContent = 'Pay a teammate directly (partial or full) to reduce debt';
+    } else {
+      if (modeExpenseBtn) modeExpenseBtn.classList.add('active');
+      if (modeTransferBtn) modeTransferBtn.classList.remove('active');
+      if (transferForm) transferForm.style.display = 'none';
+      if (expenseForm) expenseForm.style.display = 'flex';
+      if (ledgerFormTitle) ledgerFormTitle.textContent = 'Log Project Purchase';
+      if (ledgerFormSubtitle) ledgerFormSubtitle.textContent = 'Record hardware, components, or services shared by 6';
+    }
+  }
+
+  if (modeExpenseBtn && modeTransferBtn) {
+    modeExpenseBtn.addEventListener('click', () => setActivityMode('expense'));
+    modeTransferBtn.addEventListener('click', () => setActivityMode('transfer'));
+  }
+
+  // 1. Submit New Project Hardware Expense
   if (expenseForm) {
     expenseForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -812,6 +940,7 @@ function attachEventListeners() {
 
       const newExpense = {
         id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        type: 'expense',
         payerId,
         amount,
         description,
@@ -835,15 +964,109 @@ function attachEventListeners() {
     });
   }
 
+  // 1b. Submit Direct Member Debt Reimbursement / Partial Payment
+  if (transferForm) {
+    transferForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const fromId = document.getElementById('transferFromSelect').value;
+      const toId = document.getElementById('transferToSelect').value;
+      const amount = parseFloat(document.getElementById('transferAmount').value);
+      const note = document.getElementById('transferNote').value.trim();
+      const date = document.getElementById('transferDate').value || new Date().toISOString().split('T')[0];
+
+      if (!fromId || !toId) {
+        showToast('Please select both the paying teammate and recipient.', 'error');
+        return;
+      }
+
+      if (fromId === toId) {
+        showToast('Sender and recipient cannot be the same teammate.', 'error');
+        return;
+      }
+
+      if (isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid payment amount greater than 0 EGP.', 'error');
+        return;
+      }
+
+      const newTransfer = {
+        id: 'tr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        type: 'transfer',
+        fromId,
+        toId,
+        amount,
+        note: note || 'Direct peer reimbursement',
+        date
+      };
+
+      // Add to state and save
+      appState.expenses.push(newTransfer);
+      appState.save();
+
+      // Reset form
+      transferForm.reset();
+      document.getElementById('transferDate').value = new Date().toISOString().split('T')[0];
+
+      // Re-render
+      renderAll();
+
+      const fromObj = appState.members.find(m => m.id === fromId);
+      const toObj = appState.members.find(m => m.id === toId);
+      showToast(`Recorded: ${fromObj ? fromObj.name.split(' ')[0] : 'Teammate'} paid ${toObj ? toObj.name.split(' ')[0] : 'Teammate'} ${formatEGP(amount)} EGP directly!`, 'success');
+    });
+  }
+
   // 2. Quick Amount Increment Buttons (+50, +100, +250, +500, +1000)
   document.querySelectorAll('.quick-pill').forEach(btn => {
     btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target') || 'expenseAmount';
       const addVal = parseFloat(btn.getAttribute('data-add') || '0');
-      const amountInput = document.getElementById('expenseAmount');
-      const current = parseFloat(amountInput.value || '0');
-      amountInput.value = (current + addVal).toFixed(2);
+      const amountInput = document.getElementById(targetId);
+      if (amountInput) {
+        const current = parseFloat(amountInput.value || '0');
+        amountInput.value = (current + addVal).toFixed(2);
+      }
     });
   });
+
+  // 2b. Direct Settlement Card "⚡ Settle / Pay" Button Delegation
+  const settlementsContainer = document.getElementById('settlementsContainer');
+  if (settlementsContainer) {
+    settlementsContainer.addEventListener('click', (e) => {
+      const payBtn = e.target.closest('.btn-pay-settlement');
+      if (!payBtn) return;
+
+      const fromId = payBtn.getAttribute('data-from');
+      const toId = payBtn.getAttribute('data-to');
+      const amount = parseFloat(payBtn.getAttribute('data-amount') || '0');
+
+      // Switch to direct transfer mode
+      setActivityMode('transfer');
+
+      const transferFromSelect = document.getElementById('transferFromSelect');
+      const transferToSelect = document.getElementById('transferToSelect');
+      const transferAmount = document.getElementById('transferAmount');
+      const transferNote = document.getElementById('transferNote');
+
+      if (transferFromSelect) transferFromSelect.value = fromId;
+      if (transferToSelect) transferToSelect.value = toId;
+      if (transferAmount) {
+        transferAmount.value = amount > 0 ? amount.toFixed(2) : '50.00';
+        transferAmount.focus();
+        transferAmount.select();
+      }
+      if (transferNote) {
+        const toObj = appState.members.find(m => m.id === toId);
+        transferNote.value = `Payment to ${toObj ? toObj.name.split(' ')[0] : 'teammate'}`;
+      }
+
+      const formCard = document.getElementById('ledgerFormSection');
+      if (formCard) formCard.scrollIntoView({ behavior: 'smooth' });
+
+      showToast('Payment form prefilled. You can edit the amount (e.g. pay 50 EGP now).', 'info');
+    });
+  }
 
   // 3. Delete Expense Delegation
   const transactionsFeed = document.getElementById('transactionsFeed');
@@ -1181,6 +1404,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const dateInput = document.getElementById('expenseDate');
   if (dateInput) {
     dateInput.value = new Date().toISOString().split('T')[0];
+  }
+  const transferDateInput = document.getElementById('transferDate');
+  if (transferDateInput) {
+    transferDateInput.value = new Date().toISOString().split('T')[0];
   }
 
   // Load state from storage

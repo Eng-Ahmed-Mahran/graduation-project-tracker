@@ -218,16 +218,36 @@
       <!-- ================================================================= -->
       <section class="ledger-column" aria-label="Living Ledger & Expense Tracker">
         
-        <!-- Input Form Card: Log New Expense -->
-        <div class="glass-card section-card">
+        <!-- Input Form Card: Log New Expense OR Direct Debt Settlement -->
+        <div class="glass-card section-card" id="ledgerFormSection">
           <div class="section-card-header">
             <div class="section-title-wrap">
               <div class="section-badge badge-emerald">SECTION B</div>
-              <h2>Log Project Purchase</h2>
-              <p>Record hardware, components, or services in real-time</p>
+              <h2 id="ledgerFormTitle">Log Project Activity</h2>
+              <p id="ledgerFormSubtitle">Record team hardware purchases or direct peer-to-peer debt reimbursements</p>
             </div>
           </div>
 
+          <!-- Transaction Mode Selector Tabs -->
+          <div class="tx-mode-toggle-bar">
+            <button type="button" class="tx-mode-btn active" id="modeExpenseBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              <span>🛒 Project Purchase (Shared by 6)</span>
+            </button>
+            <button type="button" class="tx-mode-btn" id="modeTransferBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              <span>💸 Direct Debt Repayment / Partial (1-to-1)</span>
+            </button>
+          </div>
+
+          <!-- FORM: Mode 1 - Project Purchase (Hardware/Services) -->
           <form id="expenseForm" class="expense-form" autocomplete="off">
             <div class="form-row-grid">
               
@@ -237,7 +257,6 @@
                 <div class="custom-select-wrap">
                   <select id="payerSelect" required>
                     <option value="" disabled selected>Select Team Member</option>
-                    <!-- Options populated from team members array -->
                   </select>
                 </div>
               </div>
@@ -251,11 +270,11 @@
                 </div>
                 <!-- Quick Amount Increment Pills -->
                 <div class="quick-amount-row">
-                  <button type="button" class="quick-pill" data-add="50">+50</button>
-                  <button type="button" class="quick-pill" data-add="100">+100</button>
-                  <button type="button" class="quick-pill" data-add="250">+250</button>
-                  <button type="button" class="quick-pill" data-add="500">+500</button>
-                  <button type="button" class="quick-pill" data-add="1000">+1k</button>
+                  <button type="button" class="quick-pill" data-target="expenseAmount" data-add="50">+50</button>
+                  <button type="button" class="quick-pill" data-target="expenseAmount" data-add="100">+100</button>
+                  <button type="button" class="quick-pill" data-target="expenseAmount" data-add="250">+250</button>
+                  <button type="button" class="quick-pill" data-target="expenseAmount" data-add="500">+500</button>
+                  <button type="button" class="quick-pill" data-target="expenseAmount" data-add="1000">+1k</button>
                 </div>
               </div>
 
@@ -298,6 +317,79 @@
               </button>
             </div>
           </form>
+
+          <!-- FORM: Mode 2 - Direct Peer-to-Peer Debt Payment (Partial or Full) -->
+          <form id="transferForm" class="expense-form" autocomplete="off" style="display: none;">
+            <div class="helper-callout">
+              <div class="callout-icon">💡</div>
+              <div class="callout-text">
+                <strong>Partial or Full Debt Repayment:</strong> Use this when you transfer money directly to a teammate (e.g., InstaPay, Vodafone Cash, or cash). It reduces your debt and reduces their credit <em>without</em> inflating the total project cost.
+              </div>
+            </div>
+
+            <div class="form-row-grid">
+              
+              <!-- Field: Who is paying? (Debtor) -->
+              <div class="form-group">
+                <label for="transferFromSelect">Who is sending money? <span class="required">*</span></label>
+                <div class="custom-select-wrap">
+                  <select id="transferFromSelect" required>
+                    <option value="" disabled selected>Select Sender (Debtor)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Field: Who are they paying? (Recipient) -->
+              <div class="form-group">
+                <label for="transferToSelect">Who is receiving money? <span class="required">*</span></label>
+                <div class="custom-select-wrap">
+                  <select id="transferToSelect" required>
+                    <option value="" disabled selected>Select Recipient (Creditor)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Field: Amount in EGP -->
+              <div class="form-group">
+                <label for="transferAmount">Amount (in EGP) <span class="required">*</span></label>
+                <div class="currency-input-wrap">
+                  <span class="currency-prefix">EGP</span>
+                  <input type="number" id="transferAmount" step="0.01" min="0.01" placeholder="e.g. 50.00" required>
+                </div>
+                <!-- Quick Amount Increment Pills -->
+                <div class="quick-amount-row">
+                  <button type="button" class="quick-pill" data-target="transferAmount" data-add="50">+50</button>
+                  <button type="button" class="quick-pill" data-target="transferAmount" data-add="100">+100</button>
+                  <button type="button" class="quick-pill" data-target="transferAmount" data-add="200">+200</button>
+                  <button type="button" class="quick-pill" data-target="transferAmount" data-add="500">+500</button>
+                  <button type="button" class="quick-pill" data-target="transferAmount" data-add="1000">+1k</button>
+                </div>
+              </div>
+
+              <!-- Field: Payment Method / Note -->
+              <div class="form-group">
+                <label for="transferNote">Method &amp; Notes</label>
+                <input type="text" id="transferNote" placeholder="e.g. InstaPay partial payment, Vodafone Cash, Cash..." maxlength="70">
+              </div>
+
+              <!-- Field: Date -->
+              <div class="form-group col-span-2">
+                <label for="transferDate">Transfer Date</label>
+                <input type="date" id="transferDate">
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-emerald btn-glow" id="submitTransferBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Record Direct Payment &amp; Update Balances
+              </button>
+            </div>
+          </form>
+
         </div>
 
         <!-- The Rolling Balances: 6 Member Dashboard -->
