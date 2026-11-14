@@ -45,6 +45,7 @@
             </button>
             <span class="badge badge-accent">6-MEMBER TEAM</span>
             <span class="badge badge-rose" id="authStatusBadge">🔒 VIEW ONLY</span>
+            <span class="badge badge-emerald" id="cloudSyncBadge" style="display: none;" title="Real-Time Cloud Sync Active">⚡ LIVE SYNC</span>
           </div>
           <p class="header-subtitle">Continuous Rolling Ledger &bull; Budget, Transactions &amp; Settlement Accountant</p>
         </div>
@@ -535,7 +536,11 @@
   <!-- Toast Notification Popups -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
+  <!-- Google Firebase Realtime Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
   <!-- Main JavaScript Logic -->
-  <script src="script.js?v=2.4"></script>
+  <script src="script.js?v=3.0"></script>
 </body>
 </html>

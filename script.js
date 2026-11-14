@@ -1293,27 +1293,116 @@ function attachEventListeners() {
 }
 
 /* ============================================================================
-   6. FIREBASE CLOUD DATABASE HOOKS & PLACEHOLDER FUNCTIONS
+   6. FIREBASE CLOUD DATABASE (REAL-TIME LIVE MULTI-DEVICE SYNC)
    ============================================================================ */
 
-function firebaseSyncHook(state) {
-  /*
-  if (window.firebaseDB) {
-    saveExpensesToFirebase(state.expenses);
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCQl_lvAUPekiWN4rkLyqKcUc8kKvpbN5c",
+  authDomain: "gp-finance-tracker.firebaseapp.com",
+  databaseURL: "https://gp-finance-tracker-default-rtdb.firebaseio.com",
+  projectId: "gp-finance-tracker",
+  storageBucket: "gp-finance-tracker.firebasestorage.app",
+  messagingSenderId: "904808406382",
+  appId: "1:904808406382:web:2e477045b754343986b57f"
+};
+
+let firebaseDb = null;
+let isCloudSyncing = false;
+
+function updateCloudSyncBadge(isLive) {
+  const badge = document.getElementById('cloudSyncBadge');
+  if (!badge) return;
+  if (isLive) {
+    badge.style.display = 'inline-flex';
+    badge.className = 'badge badge-emerald';
+    badge.innerHTML = '⚡ LIVE SYNC';
+    badge.title = 'Connected to Firebase Realtime Database. All devices in sync.';
+  } else {
+    badge.style.display = 'inline-flex';
+    badge.className = 'badge badge-secondary';
+    badge.innerHTML = '📁 LOCAL';
+    badge.title = 'Working in local storage mode.';
   }
-  */
 }
 
 function initFirebaseApp() {
-  console.log('[Firebase Hook] Placeholder: Ready for Firebase credentials injection.');
+  if (typeof firebase === 'undefined') {
+    console.warn('[Firebase] SDK scripts not loaded, running in local-only mode.');
+    updateCloudSyncBadge(false);
+    return;
+  }
+
+  try {
+    if (!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    firebaseDb = firebase.database();
+    console.log('[Firebase] Connected to project:', FIREBASE_CONFIG.projectId);
+
+    // Listen for real-time changes from the cloud
+    const ledgerRef = firebaseDb.ref('ledger');
+    ledgerRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.members && data.members.length > 0) {
+        isCloudSyncing = true;
+        if (data.projectName) appState.projectName = data.projectName;
+        if (typeof data.budgetTarget === 'number') appState.budgetTarget = data.budgetTarget;
+        if (Array.isArray(data.members)) appState.members = data.members;
+        if (Array.isArray(data.expenses)) appState.expenses = data.expenses;
+        else appState.expenses = [];
+
+        // Save local backup copy
+        try {
+          localStorage.setItem('nexus_project_name', appState.projectName);
+          localStorage.setItem('nexus_budget_target', appState.budgetTarget.toString());
+          localStorage.setItem('nexus_members', JSON.stringify(appState.members));
+          localStorage.setItem('nexus_expenses', JSON.stringify(appState.expenses));
+        } catch (e) {
+          console.warn('[Firebase] Local cache backup error:', e);
+        }
+
+        renderAll();
+        isCloudSyncing = false;
+        updateCloudSyncBadge(true);
+      } else if (data === null) {
+        // Cloud database is empty: seed current state to cloud
+        console.log('[Firebase] Cloud ledger empty, uploading initial state...');
+        syncStateToFirebase();
+        updateCloudSyncBadge(true);
+      }
+    }, (error) => {
+      console.warn('[Firebase] Realtime Database read notice:', error.message);
+      updateCloudSyncBadge(false);
+    });
+
+  } catch (err) {
+    console.warn('[Firebase] Initialization notice:', err.message);
+    updateCloudSyncBadge(false);
+  }
 }
 
-function listenToFirebaseExpenses(onDataChanged) {
-  console.log('[Firebase Hook] Placeholder: Ready for onSnapshot(expenses).');
+function syncStateToFirebase() {
+  if (!firebaseDb || isCloudSyncing) return;
+
+  try {
+    firebaseDb.ref('ledger').set({
+      projectName: appState.projectName,
+      budgetTarget: appState.budgetTarget,
+      members: appState.members,
+      expenses: appState.expenses,
+      lastUpdated: new Date().toISOString()
+    }).then(() => {
+      updateCloudSyncBadge(true);
+    }).catch(err => {
+      console.warn('[Firebase] Write error:', err.message);
+    });
+  } catch (e) {
+    console.warn('[Firebase] Sync notice:', e);
+  }
 }
 
-function saveExpenseToFirebase(expenseObject) {
-  console.log('[Firebase Hook] Placeholder: Saving expense to Cloud Firestore:', expenseObject);
+function firebaseSyncHook(state) {
+  syncStateToFirebase();
 }
 
 /* ============================================================================
