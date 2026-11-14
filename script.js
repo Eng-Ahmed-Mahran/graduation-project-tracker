@@ -316,11 +316,11 @@ function computeOptimalSettlements(memberSummaries) {
   const creditors = [];
 
   memberSummaries.forEach(m => {
-    // Round to 2 decimals to prevent floating point epsilon drift
-    const bal = Math.round(m.balance * 100) / 100;
-    if (bal < -0.01) {
+    // Round to whole integers for pure integer accounting
+    const bal = Math.round(m.balance);
+    if (bal < 0) {
       debtors.push({ id: m.id, name: m.name, amount: -bal }); // positive amount they owe
-    } else if (bal > 0.01) {
+    } else if (bal > 0) {
       creditors.push({ id: m.id, name: m.name, amount: bal }); // positive amount owed to them
     }
   });
@@ -339,21 +339,21 @@ function computeOptimalSettlements(memberSummaries) {
 
     const transferAmount = Math.min(debtor.amount, creditor.amount);
 
-    if (transferAmount > 0.01) {
+    if (transferAmount > 0) {
       transactions.push({
         fromId: debtor.id,
         fromName: debtor.name,
         toId: creditor.id,
         toName: creditor.name,
-        amount: Math.round(transferAmount * 100) / 100
+        amount: Math.round(transferAmount)
       });
     }
 
     debtor.amount -= transferAmount;
     creditor.amount -= transferAmount;
 
-    if (debtor.amount <= 0.01) dIdx++;
-    if (creditor.amount <= 0.01) cIdx++;
+    if (debtor.amount <= 0) dIdx++;
+    if (creditor.amount <= 0) cIdx++;
   }
 
   return transactions;
@@ -364,14 +364,11 @@ function computeOptimalSettlements(memberSummaries) {
    ============================================================================ */
 
 /**
- * Formats a numeric value into Egyptian Pounds currency string
- * e.g., 2500 -> "2,500.00"
+ * Formats a numeric value into Egyptian Pounds currency string as an INTEGER
+ * (no decimals, rounded to nearest whole pound, e.g. 2500 -> "2,500")
  */
 function formatEGP(num) {
-  return Number(num || 0).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  return Math.round(Number(num || 0)).toLocaleString('en-US');
 }
 
 /**
@@ -490,7 +487,7 @@ function renderFinancialKPIs() {
       kpiTopFunderAmount.textContent = `${formatEGP(ledger.topFunder.totalPaid)} EGP contributed`;
     } else {
       kpiTopFunder.textContent = 'None yet';
-      kpiTopFunderAmount.textContent = '0.00 EGP contributed';
+      kpiTopFunderAmount.textContent = '0 EGP contributed';
     }
   }
 
@@ -500,9 +497,9 @@ function renderFinancialKPIs() {
 
   // Equilibrium verification badge
   if (ledgerEquilibrium) {
-    const isBalanced = Math.abs(ledger.netSum) < 0.05;
+    const isBalanced = Math.abs(ledger.netSum) < 1;
     ledgerEquilibrium.textContent = isBalanced
-      ? 'Verified (Sum = 0.00 EGP)'
+      ? 'Verified (Sum = 0 EGP)'
       : `Discrepancy: ${formatEGP(ledger.netSum)} EGP`;
     ledgerEquilibrium.style.color = isBalanced ? 'var(--emerald-light)' : 'var(--rose-light)';
   }
@@ -600,8 +597,8 @@ function renderBalancesGrid() {
 
   container.innerHTML = ledger.memberSummaries.map(member => {
     let cardStatusClass = 'is-settled';
-    let badgeHtml = '<span class="balance-status-badge badge">Settled (0.00)</span>';
-    let balanceFormatted = '0.00 EGP';
+    let badgeHtml = '<span class="balance-status-badge badge">Settled (0)</span>';
+    let balanceFormatted = '0 EGP';
 
     if (member.isOwed) {
       cardStatusClass = 'is-owed';
@@ -643,8 +640,8 @@ function renderBalancesGrid() {
         </div>
 
         <!-- Relative Contribution Bar -->
-        <div class="contribution-bar-wrap" title="${member.contributionPercent.toFixed(1)}% of total expenses">
-          <div class="contribution-bar-fill" style="width: ${member.contributionPercent.toFixed(1)}%; background-color: ${member.color};"></div>
+        <div class="contribution-bar-wrap" title="${Math.round(member.contributionPercent)}% of total expenses">
+          <div class="contribution-bar-fill" style="width: ${Math.round(member.contributionPercent)}%; background-color: ${member.color};"></div>
         </div>
       </div>
     `;
@@ -674,7 +671,7 @@ function renderSettlements() {
       <div class="settlement-flow">
         <span class="settlement-debtor">${escapeHTML(st.fromName.split(' ')[0])}</span>
         <span class="settlement-arrow">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
@@ -689,8 +686,8 @@ function renderSettlements() {
                 data-from="${st.fromId}" 
                 data-to="${st.toId}" 
                 data-amount="${st.amount}" 
-                title="Log full or partial payment to ${escapeHTML(st.toName.split(' ')[0])}">
-          ⚡ Settle / Pay
+                title="Log payment to ${escapeHTML(st.toName.split(' ')[0])}">
+          ⚡ Pay
         </button>
       </div>
     </div>
@@ -923,7 +920,7 @@ function attachEventListeners() {
       e.preventDefault();
 
       const payerId = document.getElementById('payerSelect').value;
-      const amount = parseFloat(document.getElementById('expenseAmount').value);
+      const amount = Math.round(parseFloat(document.getElementById('expenseAmount').value));
       const description = document.getElementById('expenseDescription').value.trim();
       const category = document.getElementById('expenseCategory').value;
       const date = document.getElementById('expenseDate').value || new Date().toISOString().split('T')[0];
@@ -934,7 +931,7 @@ function attachEventListeners() {
       }
 
       if (isNaN(amount) || amount <= 0) {
-        showToast('Please enter a valid amount greater than 0 EGP.', 'error');
+        showToast('Please enter a valid integer amount greater than 0 EGP.', 'error');
         return;
       }
 
@@ -971,7 +968,7 @@ function attachEventListeners() {
 
       const fromId = document.getElementById('transferFromSelect').value;
       const toId = document.getElementById('transferToSelect').value;
-      const amount = parseFloat(document.getElementById('transferAmount').value);
+      const amount = Math.round(parseFloat(document.getElementById('transferAmount').value));
       const note = document.getElementById('transferNote').value.trim();
       const date = document.getElementById('transferDate').value || new Date().toISOString().split('T')[0];
 
@@ -986,7 +983,7 @@ function attachEventListeners() {
       }
 
       if (isNaN(amount) || amount <= 0) {
-        showToast('Please enter a valid payment amount greater than 0 EGP.', 'error');
+        showToast('Please enter a valid integer payment amount greater than 0 EGP.', 'error');
         return;
       }
 
@@ -1021,11 +1018,11 @@ function attachEventListeners() {
   document.querySelectorAll('.quick-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.getAttribute('data-target') || 'expenseAmount';
-      const addVal = parseFloat(btn.getAttribute('data-add') || '0');
+      const addVal = Math.round(parseFloat(btn.getAttribute('data-add') || '0'));
       const amountInput = document.getElementById(targetId);
       if (amountInput) {
-        const current = parseFloat(amountInput.value || '0');
-        amountInput.value = (current + addVal).toFixed(2);
+        const current = Math.round(parseFloat(amountInput.value || '0'));
+        amountInput.value = current + addVal;
       }
     });
   });
@@ -1039,7 +1036,7 @@ function attachEventListeners() {
 
       const fromId = payBtn.getAttribute('data-from');
       const toId = payBtn.getAttribute('data-to');
-      const amount = parseFloat(payBtn.getAttribute('data-amount') || '0');
+      const amount = Math.round(parseFloat(payBtn.getAttribute('data-amount') || '0'));
 
       // Switch to direct transfer mode
       setActivityMode('transfer');
@@ -1052,7 +1049,7 @@ function attachEventListeners() {
       if (transferFromSelect) transferFromSelect.value = fromId;
       if (transferToSelect) transferToSelect.value = toId;
       if (transferAmount) {
-        transferAmount.value = amount > 0 ? amount.toFixed(2) : '50.00';
+        transferAmount.value = amount > 0 ? amount : 50;
         transferAmount.focus();
         transferAmount.select();
       }

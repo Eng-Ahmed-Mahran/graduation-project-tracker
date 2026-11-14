@@ -123,7 +123,7 @@
         </div>
         <div class="kpi-content">
           <span class="kpi-label">TOTAL PROJECT EXPENDITURE</span>
-          <h2 class="kpi-value font-mono" id="kpiTotalCost">0.00 <span class="currency">EGP</span></h2>
+          <h2 class="kpi-value font-mono" id="kpiTotalCost">0 <span class="currency">EGP</span></h2>
           <span class="kpi-subtext" id="kpiExpenseCount">0 transactions recorded</span>
         </div>
       </div>
@@ -140,7 +140,7 @@
         </div>
         <div class="kpi-content">
           <span class="kpi-label">FAIR SHARE (TOTAL ÷ 6)</span>
-          <h2 class="kpi-value font-mono text-cyan" id="kpiFairShare">0.00 <span class="currency">EGP</span></h2>
+          <h2 class="kpi-value font-mono text-cyan" id="kpiFairShare">0 <span class="currency">EGP</span></h2>
           <span class="kpi-subtext">Strict 1/6 per person split</span>
         </div>
       </div>
@@ -156,7 +156,7 @@
         <div class="kpi-content">
           <span class="kpi-label">TOP SPONSOR</span>
           <h2 class="kpi-value font-mono text-emerald" id="kpiTopFunder">--</h2>
-          <span class="kpi-subtext" id="kpiTopFunderAmount">0.00 EGP contributed</span>
+          <span class="kpi-subtext" id="kpiTopFunderAmount">0 EGP contributed</span>
         </div>
       </div>
 
@@ -266,7 +266,7 @@
                 <label for="expenseAmount">Amount (in EGP) <span class="required">*</span></label>
                 <div class="currency-input-wrap">
                   <span class="currency-prefix">EGP</span>
-                  <input type="number" id="expenseAmount" step="0.01" min="0.01" placeholder="0.00" required>
+                  <input type="number" id="expenseAmount" step="1" min="1" placeholder="0" required>
                 </div>
                 <!-- Quick Amount Increment Pills -->
                 <div class="quick-amount-row">
@@ -354,7 +354,7 @@
                 <label for="transferAmount">Amount (in EGP) <span class="required">*</span></label>
                 <div class="currency-input-wrap">
                   <span class="currency-prefix">EGP</span>
-                  <input type="number" id="transferAmount" step="0.01" min="0.01" placeholder="e.g. 50.00" required>
+                  <input type="number" id="transferAmount" step="1" min="1" placeholder="e.g. 50" required>
                 </div>
                 <!-- Quick Amount Increment Pills -->
                 <div class="quick-amount-row">
@@ -417,7 +417,7 @@
           <div class="section-card-header">
             <div class="section-title-wrap">
               <h2>Optimal Settlement Matrix</h2>
-              <p>Minimum required transactions to balance the entire team to 0.00 EGP</p>
+              <p>Minimum required transactions to balance the entire team to 0 EGP</p>
             </div>
           </div>
           <div class="settlements-container" id="settlementsContainer">
