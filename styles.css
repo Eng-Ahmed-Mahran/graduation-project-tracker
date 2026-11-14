@@ -552,121 +552,152 @@ body {
   color: var(--text-secondary);
 }
 
-/* --- Main Dual Dashboard Grid --- */
-.dashboard-main-grid {
+/* --- Main Top-Level Navigation Tabs --- */
+.main-navigation {
+  width: 100%;
+}
+
+.nav-tabs-wrapper {
   display: grid;
-  grid-template-columns: 430px 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-/* Section Card Header */
-.section-card {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.section-card:last-child {
-  margin-bottom: 0;
-}
-
-.section-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.section-title-wrap h2 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.section-title-wrap p {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.2rem;
-}
-
-.section-badge {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--neon-cyan);
-  background: rgba(0, 242, 254, 0.1);
-  padding: 0.18rem 0.5rem;
-  border-radius: 4px;
-  display: inline-block;
-  margin-bottom: 0.35rem;
-  border: 1px solid rgba(0, 242, 254, 0.2);
-}
-
-.section-badge.badge-emerald {
-  color: var(--emerald-light);
-  background: var(--emerald-bg);
-  border-color: rgba(16, 185, 129, 0.3);
-}
-
-/* --- Section A: Stage Tracker UI --- */
-.filter-tab-bar {
-  display: flex;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.25rem;
-  border-radius: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  padding: 0.65rem;
+  border-radius: 18px;
+  background: rgba(14, 20, 32, 0.75);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
   border: 1px solid var(--border-glass);
 }
 
-.filter-tab {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.4rem 0.5rem;
-  border-radius: 7px;
+.nav-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  padding: 0.95rem 1.35rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
   cursor: pointer;
   transition: all var(--transition-fast);
+  text-align: left;
+  position: relative;
+  overflow: hidden;
 }
 
-.filter-tab.active {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+.nav-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
-.stages-list-container {
+.nav-tab-btn.active#tabTimelineBtn {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.22), rgba(0, 242, 254, 0.08));
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 4px 22px rgba(2, 132, 199, 0.35);
+}
+
+.nav-tab-btn.active#tabTreasuryBtn {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.22), rgba(16, 185, 129, 0.08));
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 4px 22px rgba(16, 185, 129, 0.35);
+}
+
+.nav-tab-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-tab-text {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  max-height: 820px;
-  overflow-y: auto;
-  padding-right: 0.35rem;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-tab-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.nav-tab-desc {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-tab-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* --- Full-Width Views & Transitions --- */
+.app-view {
+  display: none;
+  opacity: 0;
+  transform: translateY(12px);
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.app-view.active-view {
+  display: flex !important;
+  opacity: 1;
+  transform: translateY(0);
+  animation: viewFadeIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes viewFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Full Width Stage Tracker */
+.stages-fullwidth-section {
+  width: 100%;
+}
+
+.stages-grid-container,
+.stages-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.15rem;
+  margin-top: 0.5rem;
 }
 
 /* Custom Scrollbar */
-.stages-list-container::-webkit-scrollbar,
 .transactions-feed::-webkit-scrollbar {
   width: 6px;
 }
-.stages-list-container::-webkit-scrollbar-track,
 .transactions-feed::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.02);
   border-radius: 10px;
 }
-.stages-list-container::-webkit-scrollbar-thumb,
 .transactions-feed::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 10px;
 }
-.stages-list-container::-webkit-scrollbar-thumb:hover,
 .transactions-feed::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
@@ -1581,7 +1612,12 @@ body {
     padding: 1rem;
     gap: 1.25rem;
   }
-  .dashboard-main-grid {
+  .nav-tabs-wrapper {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+  .stages-grid-container,
+  .stages-list-container {
     grid-template-columns: 1fr;
   }
   .glass-header {

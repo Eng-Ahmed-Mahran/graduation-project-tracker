@@ -152,6 +152,7 @@ class ProjectState {
     this.expenses = [...DEFAULT_EXPENSES];
     this.stageFilter = 'all'; // 'all' | 'in-progress' | 'completed'
     this.txSearchTerm = '';
+    this.currentView = 'timeline'; // 'timeline' | 'treasury'
   }
 
   /**
@@ -163,11 +164,13 @@ class ProjectState {
       const savedMembers = localStorage.getItem('nexus_members');
       const savedStages = localStorage.getItem('nexus_stages');
       const savedExpenses = localStorage.getItem('nexus_expenses');
+      const savedView = localStorage.getItem('nexus_current_view');
 
       if (savedName) this.projectName = savedName;
       if (savedMembers) this.members = JSON.parse(savedMembers);
       if (savedStages) this.stages = JSON.parse(savedStages);
       if (savedExpenses) this.expenses = JSON.parse(savedExpenses);
+      if (savedView === 'treasury' || savedView === 'timeline') this.currentView = savedView;
     } catch (e) {
       console.warn('Could not parse localStorage, falling back to defaults:', e);
     }
@@ -395,6 +398,47 @@ function escapeHTML(str) {
 }
 
 /**
+ * View Switcher: Toggles between Project Timeline & Financial Treasury views
+ */
+function switchView(viewName) {
+  appState.currentView = viewName;
+  try {
+    localStorage.setItem('nexus_current_view', viewName);
+  } catch (e) {}
+
+  const viewTimeline = document.getElementById('viewTimeline');
+  const viewTreasury = document.getElementById('viewTreasury');
+  const tabTimelineBtn = document.getElementById('tabTimelineBtn');
+  const tabTreasuryBtn = document.getElementById('tabTreasuryBtn');
+
+  if (viewName === 'treasury') {
+    if (viewTimeline) {
+      viewTimeline.classList.remove('active-view');
+      viewTimeline.style.display = 'none';
+    }
+    if (viewTreasury) {
+      viewTreasury.style.display = 'flex';
+      void viewTreasury.offsetWidth; // Force reflow for smooth animation
+      viewTreasury.classList.add('active-view');
+    }
+    if (tabTimelineBtn) tabTimelineBtn.classList.remove('active');
+    if (tabTreasuryBtn) tabTreasuryBtn.classList.add('active');
+  } else {
+    if (viewTreasury) {
+      viewTreasury.classList.remove('active-view');
+      viewTreasury.style.display = 'none';
+    }
+    if (viewTimeline) {
+      viewTimeline.style.display = 'flex';
+      void viewTimeline.offsetWidth;
+      viewTimeline.classList.add('active-view');
+    }
+    if (tabTreasuryBtn) tabTreasuryBtn.classList.remove('active');
+    if (tabTimelineBtn) tabTimelineBtn.classList.add('active');
+  }
+}
+
+/**
  * Main Render Pipeline: Updates the entire UI synchronously
  */
 function renderAll() {
@@ -427,11 +471,15 @@ function renderHeaderAndProgress() {
   const progressBar = document.getElementById('overallProgressBar');
   const progressCount = document.getElementById('stageProgressCount');
   const activePhaseName = document.getElementById('activePhaseName');
+  const navTimelineBadge = document.getElementById('navTimelineBadge');
 
   if (percentText) percentText.textContent = percentage;
   if (progressBar) progressBar.style.width = `${percentage}%`;
   if (progressCount) {
     progressCount.textContent = `${completedStages} of ${totalStages} Milestones Completed`;
+  }
+  if (navTimelineBadge) {
+    navTimelineBadge.textContent = `${percentage}% Done`;
   }
 
   // Active Phase Display
@@ -468,6 +516,7 @@ function renderFinancialKPIs() {
   const kpiExpenseCount = document.getElementById('kpiExpenseCount');
   const kpiSettlementCount = document.getElementById('kpiSettlementCount');
   const ledgerEquilibrium = document.getElementById('ledgerEquilibrium');
+  const navTreasuryBadge = document.getElementById('navTreasuryBadge');
 
   if (kpiTotalCost) {
     kpiTotalCost.innerHTML = `${formatEGP(ledger.totalCost)} <span class="currency">EGP</span>`;
@@ -475,6 +524,10 @@ function renderFinancialKPIs() {
 
   if (kpiFairShare) {
     kpiFairShare.innerHTML = `${formatEGP(ledger.fairShare)} <span class="currency">EGP</span>`;
+  }
+
+  if (navTreasuryBadge) {
+    navTreasuryBadge.textContent = `${formatEGP(ledger.totalCost)} EGP`;
   }
 
   if (kpiExpenseCount) {
@@ -883,7 +936,24 @@ function showToast(message, type = 'info') {
  * Initializes all event listeners on page load
  */
 function attachEventListeners() {
-  // 0. Transaction Mode Tabs Toggle (Project Purchase vs Direct Debt Payment)
+  // 0a. Top Navigation View Switcher (Project Timeline vs Financial Treasury)
+  const tabTimelineBtn = document.getElementById('tabTimelineBtn');
+  const tabTreasuryBtn = document.getElementById('tabTreasuryBtn');
+
+  if (tabTimelineBtn) {
+    tabTimelineBtn.addEventListener('click', () => switchView('timeline'));
+  }
+  if (tabTreasuryBtn) {
+    tabTreasuryBtn.addEventListener('click', () => switchView('treasury'));
+  }
+
+  // Optional shortcut from Timeline banner chip to Treasury
+  const chipJumpTreasury = document.getElementById('chipJumpTreasury');
+  if (chipJumpTreasury) {
+    chipJumpTreasury.addEventListener('click', () => switchView('treasury'));
+  }
+
+  // 0b. Transaction Mode Tabs Toggle (Project Purchase vs Direct Debt Payment)
   const modeExpenseBtn = document.getElementById('modeExpenseBtn');
   const modeTransferBtn = document.getElementById('modeTransferBtn');
   const expenseForm = document.getElementById('expenseForm');
@@ -1037,6 +1107,9 @@ function attachEventListeners() {
       const fromId = payBtn.getAttribute('data-from');
       const toId = payBtn.getAttribute('data-to');
       const amount = Math.round(parseFloat(payBtn.getAttribute('data-amount') || '0'));
+
+      // Switch to Treasury view first if coming from any other view
+      switchView('treasury');
 
       // Switch to direct transfer mode
       setActivityMode('transfer');
@@ -1415,6 +1488,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial Full Render
   renderAll();
+
+  // Restore active view (Project Timeline vs Financial Treasury)
+  switchView(appState.currentView || 'timeline');
 
   // Initialize Firebase Hook placeholder
   initFirebaseApp();
