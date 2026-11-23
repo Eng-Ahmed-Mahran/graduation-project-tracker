@@ -93,7 +93,7 @@ const appState = new ProjectState();
 /**
  * Calculates complete project finances with pure whole integers:
  * 1. Total Project Cost = Sum of hardware/shared purchases ONLY (no peer transfers).
- * 2. Fair Share per Person = exact piaster split of Total Project Cost / 6 (remainder piasters in roster order).
+ * 2. Fair Share per Person = whole-EGP split of Total Project Cost / 6 (remainder pounds in roster order).
  * 3. Member Net Contribution = (Hardware Paid) + (Transfers Sent) - (Transfers Received).
  * 4. Member Current Balance = Net Contribution - Fair Share.
  *    - Example: You owe 500 EGP. You pay Mohamed 50 EGP:
@@ -112,41 +112,40 @@ function calculateRollingLedger(records, members) {
   const expenses = records.filter(item => item.type !== 'transfer');
   const transfers = records.filter(item => item.type === 'transfer');
 
-  // All money math below is done in integer piasters (1 EGP = 100 piasters),
-  // so every share, balance and settlement is exact - no floating point drift.
+  // All money math below is done in whole EGP integers, so every share,
+  // balance and settlement is a round pound - no decimals anywhere.
 
-  // 1. Total Project Cost in piasters (stored amounts are whole EGP integers)
-  const totalCostPi = expenses.reduce((sum, item) => sum + Math.round(Number(item.amount || 0) * 100), 0);
-  const totalCost = totalCostPi / 100;
+  // 1. Total Project Cost in whole EGP (stored amounts are whole EGP integers)
+  const totalCost = expenses.reduce((sum, item) => sum + Math.round(Number(item.amount || 0)), 0);
 
-  // 2. Fair Share per Person in piasters, split exactly:
-  //    everyone pays floor(total/6); the remaining piasters (0-5) are assigned
+  // 2. Fair Share per Person in whole EGP:
+  //    everyone pays floor(total/6); the remaining pounds (0-5) are assigned
   //    one each to the first members in fixed roster order. Deterministic,
-  //    and never more than 1 piaster (0.01 EGP) difference between members.
-  const baseSharePi = Math.floor(totalCostPi / TEAM_SIZE);
-  const remainderPi = totalCostPi - baseSharePi * TEAM_SIZE;
+  //    and never more than 1 EGP difference between members.
+  const baseShare = Math.floor(totalCost / TEAM_SIZE);
+  const remainder = totalCost - baseShare * TEAM_SIZE;
 
-  // 3. Per-member contributions and net rolling balances (all in piasters)
+  // 3. Per-member contributions and net rolling balances (all in whole EGP)
   const memberSummaries = members.map((member, index) => {
-    const sharePi = baseSharePi + (index < remainderPi ? 1 : 0);
+    const share = baseShare + (index < remainder ? 1 : 0);
 
     const hardwarePaid = expenses
       .filter(tx => tx.payerId === member.id)
-      .reduce((sum, tx) => sum + Math.round(Number(tx.amount || 0) * 100) / 100, 0);
+      .reduce((sum, tx) => sum + Math.round(Number(tx.amount || 0)), 0);
 
     const transfersSent = transfers
       .filter(tr => tr.fromId === member.id)
-      .reduce((sum, tr) => sum + Math.round(Number(tr.amount || 0) * 100) / 100, 0);
+      .reduce((sum, tr) => sum + Math.round(Number(tr.amount || 0)), 0);
 
     const transfersReceived = transfers
       .filter(tr => tr.toId === member.id)
-      .reduce((sum, tr) => sum + Math.round(Number(tr.amount || 0) * 100) / 100, 0);
+      .reduce((sum, tr) => sum + Math.round(Number(tr.amount || 0)), 0);
 
-    // Net contribution to the team pool, exact piasters
-    const netContributedPi = Math.round((hardwarePaid + transfersSent - transfersReceived) * 100);
+    // Net contribution to the team pool, whole EGP
+    const netContributed = hardwarePaid + transfersSent - transfersReceived;
 
-    // Continuous Rolling Balance: net contributed minus exact share
-    const balancePi = netContributedPi - sharePi;
+    // Continuous Rolling Balance: net contributed minus fair share
+    const balance = netContributed - share;
 
     const contributionPercent = totalCost > 0 ? Math.round((hardwarePaid / totalCost) * 100) : 0;
 
@@ -159,13 +158,13 @@ function calculateRollingLedger(records, members) {
       hardwarePaid: hardwarePaid,
       transfersSent: transfersSent,
       transfersReceived: transfersReceived,
-      netContributed: netContributedPi / 100,
-      fairShare: sharePi,              // piasters (exact)
-      balance: balancePi,              // piasters (exact)
+      netContributed: netContributed,
+      fairShare: share,                // whole EGP
+      balance: balance,                // whole EGP
       contributionPercent: contributionPercent,
-      isOwed: balancePi > 0,
-      isInDebt: balancePi < 0,
-      isSettled: balancePi === 0
+      isOwed: balance > 0,
+      isInDebt: balance < 0,
+      isSettled: balance === 0
     };
   });
 
@@ -175,15 +174,15 @@ function calculateRollingLedger(records, members) {
     topFunder = [...memberSummaries].sort((a, b) => b.totalPaid - a.totalPaid)[0];
   }
 
-  // Equilibrium Sanity Check: integer piaster sum of all net balances, always exactly 0
+  // Equilibrium Sanity Check: whole-EGP sum of all net balances, always exactly 0
   const netSum = memberSummaries.reduce((sum, m) => sum + m.balance, 0);
 
-  // Generate Minimal Cash Settlement Transactions (exact piaster amounts)
+  // Generate Minimal Cash Settlement Transactions (whole EGP amounts)
   const settlements = computeOptimalSettlements(memberSummaries);
 
   return {
     totalCost,
-    fairShare: baseSharePi,
+    fairShare: baseShare,
     memberSummaries,
     topFunder,
     netSum,
@@ -203,11 +202,11 @@ function computeOptimalSettlements(memberSummaries) {
   const creditors = [];
 
   memberSummaries.forEach(m => {
-    const bal = m.balance; // exact piasters
+    const bal = m.balance; // whole EGP
     if (bal < 0) {
-      debtors.push({ id: m.id, name: m.name, amount: -bal }); // piasters owed
+      debtors.push({ id: m.id, name: m.name, amount: -bal }); // EGP owed
     } else if (bal > 0) {
-      creditors.push({ id: m.id, name: m.name, amount: bal }); // piasters to receive
+      creditors.push({ id: m.id, name: m.name, amount: bal }); // EGP to receive
     }
   });
 
@@ -231,7 +230,7 @@ function computeOptimalSettlements(memberSummaries) {
         fromName: debtor.name,
         toId: creditor.id,
         toName: creditor.name,
-        amount: transferAmount // exact piasters
+        amount: transferAmount // whole EGP
       });
     }
 
@@ -258,26 +257,10 @@ function formatEGP(num) {
 }
 
 /**
- * Formats a stored EGP amount: whole pounds stay integers, fractional transfer
- * amounts show exact piasters (e.g. 396 -> "396", 395.83 -> "395.83").
+ * Formats a stored EGP amount as whole pounds (all recorded amounts are whole EGP).
  */
 function formatEGPStored(amount) {
-  const n = Number(amount || 0);
-  return Number.isInteger(n) ? formatEGP(n) : formatEGPPiasters(Math.round(n * 100));
-}
-
-/**
- * Formats an integer PIASTER value as exact EGP with 2 decimals (e.g. 51917 -> "519.17").
- * Used for fair shares, rolling balances and settlement proposals, which are
- * computed exactly in piasters. Whole-EGP amounts still use formatEGP.
- */
-function formatEGPPiasters(piasters) {
-  const pi = Math.round(Number(piasters || 0));
-  const sign = pi < 0 ? '-' : '';
-  const absPi = Math.abs(pi);
-  const egpPart = Math.floor(absPi / 100).toLocaleString('en-US');
-  const piPart = String(absPi % 100).padStart(2, '0');
-  return `${sign}${egpPart}.${piPart}`;
+  return formatEGP(amount);
 }
 
 /**
@@ -382,7 +365,10 @@ function renderFinancialKPIs(ledger) {
   }
 
   if (kpiFairShare) {
-    kpiFairShare.innerHTML = `${formatEGP(ledger.fairShare / 100)} <span class="currency">EGP</span>`;
+    // Shares are whole EGP: base for everyone, +1 EGP for the first members in
+    // roster order when the total does not divide evenly. Show the top share.
+    const topShare = ledger.memberSummaries.reduce((mx, m) => Math.max(mx, m.fairShare), ledger.fairShare);
+    kpiFairShare.innerHTML = `${formatEGP(topShare)} <span class="currency">EGP</span>`;
   }
 
   const remaining = appState.budgetTarget - ledger.totalCost;
@@ -411,7 +397,7 @@ function renderFinancialKPIs(ledger) {
     const isBalanced = Math.abs(ledger.netSum) < 1;
     ledgerEquilibrium.textContent = isBalanced
       ? 'Verified (Sum = 0 EGP)'
-      : `Discrepancy: ${formatEGP(ledger.netSum / 100)} EGP`;
+      : `Discrepancy: ${formatEGP(ledger.netSum)} EGP`;
     ledgerEquilibrium.style.color = isBalanced ? 'var(--emerald-light)' : 'var(--rose-light)';
   }
 }
@@ -431,11 +417,11 @@ function renderBalancesGrid(ledger) {
     if (member.isOwed) {
       cardStatusClass = 'is-owed';
       badgeHtml = '<span class="balance-status-badge badge badge-emerald">+ Owed Money</span>';
-      balanceFormatted = `+ ${formatEGP(member.balance / 100)} EGP`;
+      balanceFormatted = `+ ${formatEGP(member.balance)} EGP`;
     } else if (member.isInDebt) {
       cardStatusClass = 'is-in-debt';
       badgeHtml = '<span class="balance-status-badge badge badge-rose">- Owes Team</span>';
-      balanceFormatted = `- ${formatEGP(Math.abs(member.balance) / 100)} EGP`;
+      balanceFormatted = `- ${formatEGP(Math.abs(member.balance))} EGP`;
     }
 
     return `
@@ -457,7 +443,7 @@ function renderBalancesGrid(ledger) {
           </div>
           <div class="stat-item">
             <span class="stat-label">Fair Share</span>
-            <span class="stat-val font-mono">${formatEGP(member.fairShare / 100)}</span>
+            <span class="stat-val font-mono">${formatEGP(member.fairShare)}</span>
           </div>
         </div>
 
@@ -491,7 +477,7 @@ function renderSettlements(ledger) {
     return;
   }
 
-  container.innerHTML = `<div class="settlement-rounding-note" style="opacity:0.75;font-size:0.8rem;margin-bottom:0.5rem;">Settlement proposals are exact to the piaster and always close the ledger to 0. Dashboard cards round to whole EGP for display; payments can be logged to the piaster.</div>` + ledger.settlements.map((st) => `
+  container.innerHTML = ledger.settlements.map((st) => `
     <div class="settlement-card">
       <div class="settlement-flow">
         <span class="settlement-debtor">${escapeHTML(st.fromName.split(' ')[0])}</span>
@@ -505,12 +491,12 @@ function renderSettlements(ledger) {
       </div>
       <div class="settlement-right">
         <div class="settlement-amount font-mono">
-          ${formatEGPPiasters(st.amount)} EGP
+          ${formatEGP(st.amount)} EGP
         </div>
         <button class="btn-pay-settlement" 
                 data-from="${st.fromId}" 
                 data-to="${st.toId}" 
-                data-amount="${(st.amount / 100).toFixed(2)}" 
+                data-amount="${st.amount}" 
                 title="Log payment to ${escapeHTML(st.toName.split(' ')[0])}">
           ⚡ Pay
         </button>
@@ -1015,7 +1001,7 @@ function attachEventListeners() {
 
       const fromId = document.getElementById('transferFromSelect').value;
       const toId = document.getElementById('transferToSelect').value;
-      const amount = Math.round(parseFloat(document.getElementById('transferAmount').value) * 100) / 100; // transfers may be exact to the piaster
+      const amount = Math.round(parseFloat(document.getElementById('transferAmount').value)); // whole EGP only
       const note = document.getElementById('transferNote').value.trim();
       const date = document.getElementById('transferDate').value || new Date().toISOString().split('T')[0];
 
@@ -1030,7 +1016,7 @@ function attachEventListeners() {
       }
 
       if (isNaN(amount) || amount <= 0) {
-        showToast('Please enter a valid payment amount greater than 0 EGP (piasters allowed).', 'error');
+        showToast('Please enter a valid payment amount of at least 1 EGP.', 'error');
         return;
       }
 
@@ -1308,7 +1294,7 @@ function attachEventListeners() {
         const type = document.getElementById('editTxType').value;
         const editType = document.getElementById('editTxType').value;
         const rawAmount = Number(document.getElementById('editTxAmount').value);
-        const amount = editType === 'transfer' ? Math.round(rawAmount * 100) / 100 : Math.round(rawAmount);
+        const amount = Math.round(rawAmount);
         const date = document.getElementById('editTxDate').value || new Date().toISOString().split('T')[0];
 
         if (isNaN(amount) || amount <= 0) {
@@ -1562,3 +1548,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Firebase Hook placeholder
   initFirebaseApp();
 });
+
