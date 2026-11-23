@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=3.3">
+  <link rel="stylesheet" href="styles.css?v=3.4">
 </head>
 <body>
   <!-- Ambient Glassmorphic Background Glows (Contained to prevent mobile viewport stretching) -->
@@ -314,7 +314,7 @@
                 <label for="transferAmount">Amount (in EGP) <span class="required">*</span></label>
                 <div class="currency-input-wrap">
                   <span class="currency-prefix">EGP</span>
-                  <input type="number" id="transferAmount" step="1" min="1" placeholder="e.g. 50" required>
+                  <input type="number" id="transferAmount" step="0.01" min="0.01" placeholder="e.g. 50" required>
                 </div>
                 <!-- Quick Amount Increment Pills -->
                 <div class="quick-amount-row">
@@ -618,6 +618,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <!-- Main JavaScript Logic -->
-  <script src="script.js?v=3.3"></script>
+  <script src="script.js?v=3.4"></script>
 </body>
 </html>
